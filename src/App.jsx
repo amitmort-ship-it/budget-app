@@ -517,7 +517,7 @@ export default function App() {
       </div>
 
       {/* Keypad */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, width:220 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, width:220, direction:"ltr" }}>
         {[1,2,3,4,5,6,7,8,9].map(d=>(
           <button key={d} onClick={()=>handleVaultDigit(String(d))}
             style={{ background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.1)", borderRadius:14, height:60, fontSize:22, fontWeight:700, color:"#fff", cursor:"pointer", backdropFilter:"blur(4px)", transition:"all .1s", boxShadow:"0 2px 8px rgba(0,0,0,.3)" }}
