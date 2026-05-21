@@ -630,7 +630,7 @@ export default function App() {
           <div style={{ background:barColor, height:"100%", width:`${weekPct}%`, transition:"width .4s", borderRadius:8 }} />
         </div>
         <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, marginTop:5, opacity:.75 }}>
-          <span>₪{spentThisWeek.toLocaleString("he-IL",{maximumFractionDigits:0})} הוצאה{spentOffBudgetThisWeek>0?` + ₪${spentOffBudgetThisWeek.toLocaleString("he-IL",{maximumFractionDigits:0})} מעקב`:""}</span>
+          <span>₪{spentThisWeek.toLocaleString("he-IL",{maximumFractionDigits:0})} הוצאה{trackingSpentThisWeek>0?` + ₪${trackingSpentThisWeek.toLocaleString("he-IL",{maximumFractionDigits:0})} מעקב`:""}</span>
           <span>תקציב שבועי: ₪{weeklyVariableBudget.toLocaleString("he-IL",{maximumFractionDigits:0})}</span>
         </div>
         {hasFixedOverflow && (
