@@ -281,13 +281,13 @@ export default function App() {
     return total + Math.max(0, spent - getMonthlyAmount(b));
   }, 0);
   const weeklyFixedOverflowPenalty = fixedOverflowThisMonth / weeksRemaining;
+  const totalVariableOnBudget = data.variableBuckets.filter(b=>!b.trackingOnly).reduce((s,b)=>s+Number(b.amount||0),0);
   const baseWeeklyVariableBudget = totalVariableOnBudget / weeksInMonth;
   const weeklyVariableBudget = Math.max(0, baseWeeklyVariableBudget - weeklyFixedOverflowPenalty);
 
   const expensesThisWeek = data.expenses.filter(e => getWeekId(e.date) === selectedWeek);
   const variableBucketIds = new Set(data.variableBuckets.map(b => b.id));
   const trackingOnlyIds = new Set(data.variableBuckets.filter(b=>b.trackingOnly).map(b=>b.id));
-  const totalVariableOnBudget = data.variableBuckets.filter(b=>!b.trackingOnly).reduce((s,b)=>s+Number(b.amount||0),0);
   const spentThisWeek = expensesThisWeek.filter(e => variableBucketIds.has(e.bucketId) && !trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
   const trackingSpentThisWeek = expensesThisWeek.filter(e => trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
   const leftThisWeek = weeklyVariableBudget - spentThisWeek;
