@@ -219,7 +219,7 @@ export default function App() {
 
   const activeFixed = (data.fixedBuckets||[]).filter(b => !b.isInstallment || getInstallmentsRemaining(b) > 0);
   const totalFixed = activeFixed.reduce((s,b) => s + getMonthlyAmount(b), 0);
-  const totalVariableBudget = data.variableBuckets.reduce((s,b) => s + Number(b.amount||0), 0);
+  const totalVariableBudget = data.variableBuckets.filter(b=>!b.trackingOnly).reduce((s,b) => s + Number(b.amount||0), 0);
   const totalBudget = totalFixed + totalVariableBudget;
   const remaining = totalMonthlyIncome - totalBudget;
 
@@ -233,7 +233,9 @@ export default function App() {
 
   const expensesThisWeek = data.expenses.filter(e => getWeekId(e.date) === selectedWeek);
   const variableBucketIds = new Set(data.variableBuckets.map(b => b.id));
-  const spentThisWeek = expensesThisWeek.filter(e => variableBucketIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
+  const trackingOnlyIds = new Set(data.variableBuckets.filter(b=>b.trackingOnly).map(b=>b.id));
+  const spentThisWeek = expensesThisWeek.filter(e => variableBucketIds.has(e.bucketId) && !trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
+  const trackingSpentThisWeek = expensesThisWeek.filter(e => trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
   const leftThisWeek = weeklyVariableBudget - spentThisWeek;
   const allWeeks = [...new Set(data.expenses.map(e => getWeekId(e.date)))].sort().reverse();
   const bucketSpendThisWeek = (id) => expensesThisWeek.filter(e=>e.bucketId===id).reduce((s,e)=>s+Number(e.amount),0);
@@ -288,7 +290,7 @@ export default function App() {
       return showToast("תשלומים נוספו ✓");
     }
     if (!newBucket.name || !newBucket.amount) return showToast("נא למלא שם וסכום", "#ef4444");
-    const bucket = { id: uid(), name: newBucket.name, amount: Number(newBucket.amount), icon: newBucket.icon };
+    const bucket = { id: uid(), name: newBucket.name, amount: Number(newBucket.amount), icon: newBucket.icon, ...(type==="variable"?{trackingOnly:!!newBucket.trackingOnly}:{}) };
     const key = type==="fixed"?"fixedBuckets":"variableBuckets";
     save({ ...data, [key]: [...data[key], bucket] });
     setNewBucket({ name:"", amount:"", icon:"misc", isInstallment:false, installmentsLeft:"", totalAmount:"" });
@@ -298,7 +300,7 @@ export default function App() {
   const saveBucketEdit = () => {
     if (!editBucket.name || !editBucket.amount) return showToast("נא למלא שם וסכום", "#ef4444");
     const key = editBucket.type==="fixed"?"fixedBuckets":"variableBuckets";
-    save({ ...data, [key]: data[key].map(b=>b.id===editBucket.id?{...b, name:editBucket.name, amount:Number(editBucket.amount), icon:editBucket.icon}:b) });
+    save({ ...data, [key]: data[key].map(b=>b.id===editBucket.id?{...b, name:editBucket.name, amount:Number(editBucket.amount), icon:editBucket.icon, ...(editBucket.type==="variable"?{trackingOnly:!!editBucket.trackingOnly}:{})}:b) });
     setEditBucket(null); showToast("באקט עודכן ✓");
   };
 
@@ -565,6 +567,7 @@ export default function App() {
         <div style={{ fontSize:13, opacity:.8, marginBottom:12 }}>
           נשאר השבוע מהמשתנות{hasFixedOverflow&&<span style={{fontSize:11,opacity:.8}}> (כולל קיזוז חריגות)</span>}
         </div>
+        {trackingSpentThisWeek>0&&<div style={{fontSize:11,opacity:.75,marginBottom:6}}>📊 מעקב השבוע: ₪{trackingSpentThisWeek.toLocaleString("he-IL",{maximumFractionDigits:0})}</div>}
         <div style={{ background:"rgba(255,255,255,.2)", borderRadius:8, height:8, overflow:"hidden" }}>
           <div style={{ background:barColor, height:"100%", width:`${weekPct}%`, transition:"width .4s", borderRadius:8 }} />
         </div>
@@ -725,7 +728,7 @@ export default function App() {
                 const wB=Number(b.amount)/weeksInMonth; const spent=bucketSpendThisWeek(b.id); const p=pct(spent,wB); const bc=p>90?"#ef4444":p>65?"#f59e0b":"#10b981";
                 return (<div key={b.id} style={{...cardStyle,padding:"12px 14px",marginBottom:8}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:20}}>{ICONS[b.icon]}</span><span style={{fontSize:14,fontWeight:600}}>{b.name}</span></div>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:20}}>{ICONS[b.icon]}</span><span style={{fontSize:14,fontWeight:600}}>{b.name}</span>{b.trackingOnly&&<span style={{fontSize:10,fontWeight:700,background:"#fef9c3",color:"#92400e",border:"1px solid #f59e0b",borderRadius:5,padding:"1px 5px",marginRight:4}}>📊 מעקב</span>}</div>
                     <div style={{fontSize:12,color:"#64748b"}}><span style={{color:bc,fontWeight:700}}>₪{spent.toLocaleString("he-IL",{maximumFractionDigits:0})}</span>{" / "}₪{wB.toLocaleString("he-IL",{maximumFractionDigits:0})}</div>
                   </div>
                   <div style={{background:"#f1f5f9",borderRadius:6,height:5,overflow:"hidden"}}><div style={{background:bc,height:"100%",width:`${p}%`,transition:"width .3s",borderRadius:6}}/></div>
@@ -780,6 +783,14 @@ export default function App() {
                       <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>
                         {Object.entries(ICONS).slice(0,11).map(([k,v])=>(<button key={k} onClick={()=>setEditBucket(p=>({...p,icon:k}))} style={{background:editBucket.icon===k?theme.btnLight:"#f1f5f9",border:editBucket.icon===k?`2px solid ${theme.btn}`:"2px solid transparent",borderRadius:7,padding:"5px 8px",fontSize:15,cursor:"pointer"}}>{v}</button>))}
                       </div>
+                      {/* Tracking-only toggle */}
+                      <div onClick={()=>setEditBucket(p=>({...p,trackingOnly:!p.trackingOnly}))} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",marginBottom:10,background:editBucket.trackingOnly?"#fef9c3":"#f0fdf4",border:editBucket.trackingOnly?"1.5px solid #f59e0b":"1.5px solid #86efac",borderRadius:8,cursor:"pointer",userSelect:"none"}}>
+                        <span style={{fontSize:14}}>{editBucket.trackingOnly?"📊":"💰"}</span>
+                        <span style={{fontSize:12,fontWeight:600,color:editBucket.trackingOnly?"#92400e":"#166534",flex:1}}>{editBucket.trackingOnly?"מעקב בלבד — לא משפיע על תקציב שבועי":"מחושב בתקציב השבועי"}</span>
+                        <div style={{width:32,height:18,background:editBucket.trackingOnly?"#f59e0b":"#22c55e",borderRadius:9,position:"relative",transition:"background 0.2s"}}>
+                          <div style={{position:"absolute",top:2,left:editBucket.trackingOnly?14:2,width:14,height:14,background:"#fff",borderRadius:"50%",transition:"left 0.2s"}}/>
+                        </div>
+                      </div>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
                         <button onClick={()=>setEditBucket(null)} style={{background:"#f1f5f9",color:"#64748b",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>ביטול</button>
                         <button onClick={()=>deleteBucket("variable",b.id)} style={{background:"#fef2f2",color:"#ef4444",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>מחק</button>
@@ -816,6 +827,13 @@ export default function App() {
               </div>
               <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
                 {Object.entries(ICONS).slice(0,11).map(([k,v])=>(<button key={k} onClick={()=>setNewBucket(p=>({...p,icon:k}))} style={{background:newBucket.icon===k?theme.btnLight:"#f1f5f9",border:newBucket.icon===k?`2px solid ${theme.btn}`:"2px solid transparent",borderRadius:8,padding:"6px 10px",fontSize:16,cursor:"pointer"}}>{v}</button>))}
+              </div>
+              <div onClick={()=>setNewBucket(p=>({...p,trackingOnly:!p.trackingOnly}))} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",marginBottom:10,background:newBucket.trackingOnly?"#fef9c3":"#f0fdf4",border:newBucket.trackingOnly?"1.5px solid #f59e0b":"1.5px solid #86efac",borderRadius:8,cursor:"pointer",userSelect:"none"}}>
+                <span style={{fontSize:14}}>{newBucket.trackingOnly?"📊":"💰"}</span>
+                <span style={{fontSize:12,fontWeight:600,color:newBucket.trackingOnly?"#92400e":"#166534",flex:1}}>{newBucket.trackingOnly?"מעקב בלבד — לא משפיע על תקציב שבועי":"מחושב בתקציב השבועי"}</span>
+                <div style={{width:32,height:18,background:newBucket.trackingOnly?"#f59e0b":"#22c55e",borderRadius:9,position:"relative",transition:"background 0.2s"}}>
+                  <div style={{position:"absolute",top:2,left:newBucket.trackingOnly?14:2,width:14,height:14,background:"#fff",borderRadius:"50%",transition:"left 0.2s"}}/>
+                </div>
               </div>
               <button onClick={()=>addBucket("variable")} style={{width:"100%",background:theme.btn,color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer"}}>הוסף באקט</button>
             </div>
