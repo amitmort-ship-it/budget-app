@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
 
 // ── Supabase sync ────────────────────────────────────────────────────────
@@ -198,7 +198,7 @@ export default function App() {
   const [lastSync, setLastSync] = useState(null);
 
   // Load from Supabase on mount
-  useState(() => {
+  useEffect(() => {
     loadFromSupabase().then(remote => {
       if (remote) {
         const merged = { ...DEFAULT_STATE, ...remote };
@@ -207,6 +207,7 @@ export default function App() {
         setLastSync(new Date());
       }
     });
+  }, []);
   });
 
   const [view, setView] = useState("dashboard");
