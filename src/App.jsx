@@ -951,7 +951,7 @@ style={{...cardStyle,border:isEditing?`2px solid ${theme.btn}`:"2px solid transp
 <input type="number" value={editBucket.amount} onChange={e=>setEditBucket(p=>({...p,amount:e.target.value}))} style={inputStyle} placeholder="סכום חודשי ₪"/>
 </div>
 <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>
-{Object.entries(ICONS).slice(0,11).map(([k,v])=>(<button key={k} onClick={()=>setEditBucket(p=>({...p,icon:k}))} style={{background:editBucket.icon===k?theme.btnLight:"#f1f5f9",border:editBucket.icon===k:`2px solid ${theme.btn}`:"2px solid transparent",borderRadius:7,padding:"5px 8px",fontSize:15,cursor:"pointer"}}>{v}</button>))}
+{Object.entries(ICONS).slice(0,11).map(([k,v])=>(<button key={k} onClick={()=>setEditBucket(p=>({...p,icon:k}))} style={{background:editBucket.icon===k?theme.btnLight:"#f1f5f9",border:editBucket.icon===k?`2px solid ${theme.btn}`:"2px solid transparent",borderRadius:7,padding:"5px 8px",fontSize:15,cursor:"pointer"}}>{v}</button>))}
 </div>
 <div onClick={()=>setEditBucket(p=>({...p,trackingOnly:!p.trackingOnly}))} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",marginBottom:10,background:editBucket.trackingOnly?"#fdf6e8":"#edf7f1",border:editBucket.trackingOnly?"1.5px solid #e8b87c":"1.5px solid #a8d5ba",borderRadius:8,cursor:"pointer",userSelect:"none"}}>
 <span style={{fontSize:14}}>{editBucket.trackingOnly?"📊":"💰"}</span>
@@ -1483,7 +1483,7 @@ style={{width:18,height:18,borderRadius:"50%",background:c,border:editNote.color
 <div style={{fontSize:12,fontWeight:600,marginBottom:10,color:"#6b7a8d"}}>+ הוסף</div>
 <div style={{display:"flex",gap:8,marginBottom:10}}>
 {[["card","💳 כרטיס"],["bank","🏦 בנק"],["cash","💵 מזומן"]].map(([t,label])=>(
-<button key={t} onClick={()=>setNewPM(p=>({...p,type:t,digits:""}))} style={{flex:1,background:newPM.type===t?theme.btnLight:"#f1f5f9",border:newPM.type===t:`2px solid ${theme.btn}`:"2px solid transparent",borderRadius:8,padding:"8px 4px",fontSize:11,fontWeight:600,cursor:"pointer"}}>{label}</button>
+<button key={t} onClick={()=>setNewPM(p=>({...p,type:t,digits:""}))} style={{flex:1,background:newPM.type===t?theme.btnLight:"#f1f5f9",border:newPM.type===t?`2px solid ${theme.btn}`:"2px solid transparent",borderRadius:8,padding:"8px 4px",fontSize:11,fontWeight:600,cursor:"pointer"}}>{label}</button>
 ))}
 </div>
 <div style={{display:"grid",gridTemplateColumns:newPM.type==="card"?"1fr 1fr":"1fr",gap:10,marginBottom:10}}>
