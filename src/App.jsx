@@ -891,11 +891,11 @@ style={{width:"100%",background:leftThisWeek<0?"#e07070":theme.btn,color:"#fff",
 <div style={{fontSize:13,fontWeight:700,color:"#334155",marginBottom:10}}>משתנות – {getWeekLabel(selectedWeek)}</div>
 {data.variableBuckets.length===0?<div style={{textAlign:"center",color:"#94a3b8",fontSize:13,padding:20}}>אין באקטים משתנים עדיין</div>:
 data.variableBuckets.map(b=>{
-const wB=Number(b.amount)/weeksInMonth; const spent=bucketSpendThisWeek(b.id); const p=pct(spent,wB); const bc=p>90?"#e07070":p>65?"#e8b87c":"#6bbf8e";
+const monthlyBudget=Number(b.amount); const monthlySpent=data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).reduce((s,e)=>s+Number(e.amount),0); const p=pct(monthlySpent,monthlyBudget); const bc=p>90?"#e07070":p>65?"#e8b87c":"#6bbf8e";
 return (<div key={b.id} style={{...cardStyle,padding:"12px 14px",marginBottom:8}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
 <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:20}}>{ICONS[b.icon]}</span><span style={{fontSize:14,fontWeight:600}}>{b.name}</span>{b.trackingOnly&&<span style={{fontSize:9,background:"#fdf6e8",color:"#b07020",padding:"2px 5px",borderRadius:4,fontWeight:700}}>מעקב</span>}</div>
-<div style={{fontSize:12,color:"#6b7a8d"}}><span style={{color:bc,fontWeight:700}}>₪{spent.toLocaleString("he-IL",{maximumFractionDigits:0})}</span>{" / "}₪{Number(b.amount).toLocaleString("he-IL",{maximumFractionDigits:0})}</div>
+<div style={{fontSize:12,color:"#6b7a8d"}}><span style={{color:bc,fontWeight:700}}>₪{monthlySpent.toLocaleString("he-IL",{maximumFractionDigits:0})}</span>{" / "}₪{monthlyBudget.toLocaleString("he-IL",{maximumFractionDigits:0})}</div>
 </div>
 <div style={{background:"#eef2f7",borderRadius:6,height:5,overflow:"hidden"}}><div style={{background:bc,height:"100%",width:`${p}%`,transition:"width .3s",borderRadius:6}}/></div>
 </div>);
