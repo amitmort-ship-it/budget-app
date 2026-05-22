@@ -208,7 +208,6 @@ export default function App() {
       }
     });
   }, []);
-  });
 
   const [view, setView] = useState("dashboard");
   const [newBucket, setNewBucket] = useState({ name: "", amount: "", icon: "misc", isInstallment: false, installmentsLeft: "", totalAmount: "" });
