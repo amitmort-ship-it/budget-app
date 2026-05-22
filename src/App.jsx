@@ -260,6 +260,7 @@ const [showOcrModal, setShowOcrModal] = useState(false);
 const dragItem = useRef(null);
 const dragOver = useRef(null);
 const ocrFileRef = useRef(null);
+const [selectedDay, setSelectedDay] = useState(null);
 const save = useCallback((next) => {
 setData(next);
 try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
@@ -905,9 +906,11 @@ const dd=new Date(day.ds).getDate();
 return(
 <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:1,position:"relative",zIndex:2}}>
 <div title={day.ds+": ₪"+day.daySpend}
+onClick={()=>setSelectedDay({ds:day.ds,daySpend:day.daySpend,expenses:data.expenses.filter(e=>e.date===day.ds)})}
 style={{width:"100%",background:barColor,borderRadius:"3px 3px 0 0",height:barH,
 outline:day.isToday?"2px solid "+theme.acc:"none",
-outlineOffset:1,cursor:"default",minHeight:2,transition:"height .3s"}}/>
+outlineOffset:1,cursor:day.daySpend>0?"pointer":"default",minHeight:2,transition:"height .3s",
+boxShadow:day.daySpend>0?"0 1px 4px rgba(0,0,0,.1)":"none"}}/>
 {(dd===1||dd===5||dd===10||dd===15||dd===20||dd===25||day.isToday)&&
 <span style={{fontSize:8,color:day.isToday?theme.acc:"#94a3b8",fontWeight:day.isToday?800:400}}>{dd}</span>}
 </div>
@@ -1660,6 +1663,47 @@ return (<>
 </div>
 </>);
 })()}
+</div>
+)}
+
+{/* Day expenses popup */}
+{selectedDay&&(
+<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:400,display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+onClick={e=>{if(e.target===e.currentTarget)setSelectedDay(null);}}>
+<div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,maxHeight:"70vh",overflowY:"auto",padding:"20px 20px 32px"}}>
+<div style={{width:36,height:4,background:"#dde4ed",borderRadius:2,margin:"0 auto 16px"}}/>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+<div>
+<div style={{fontSize:15,fontWeight:800,color:"#334155"}}>{new Date(selectedDay.ds).toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long"})}</div>
+<div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>סה"כ: ₪{selectedDay.daySpend.toLocaleString("he-IL")}</div>
+</div>
+<button onClick={()=>setSelectedDay(null)} style={{background:"#f1f5f9",border:"none",borderRadius:10,width:32,height:32,fontSize:16,cursor:"pointer",color:"#64748b",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+</div>
+{selectedDay.expenses.length===0
+?<div style={{textAlign:"center",color:"#94a3b8",fontSize:13,padding:24}}>אין הוצאות ביום זה</div>
+:<div>
+{selectedDay.expenses.map(e=>(
+<div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #f1f5f9"}}>
+<div style={{flex:1}}>
+<div style={{fontSize:13,fontWeight:700,color:"#334155"}}>{getBucketName(e.bucketId)}</div>
+{e.note&&<div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{e.note}</div>}
+<div style={{display:"flex",gap:6,marginTop:3,flexWrap:"wrap"}}>
+<span style={{fontSize:10,background:fixedBucketIds.has(e.bucketId)?"#fdf6e8":"#eef4fb",color:fixedBucketIds.has(e.bucketId)?"#b07020":"#4a7fa5",padding:"1px 5px",borderRadius:3}}>{fixedBucketIds.has(e.bucketId)?"קבועה":"משתנה"}</span>
+{e.paymentMethodId&&<span style={{fontSize:10,color:theme.acc}}>{getPMLabel(e.paymentMethodId)}</span>}
+</div>
+</div>
+<div style={{display:"flex",alignItems:"center",gap:8,marginRight:4}}>
+<span style={{fontWeight:800,color:"#e07070",fontSize:15}}>₪{Number(e.amount).toLocaleString("he-IL")}</span>
+<button onClick={()=>{setEditExpense({...e});setSelectedDay(null);}} style={{background:theme.btnLight,border:"none",color:theme.btn,borderRadius:7,padding:"3px 7px",cursor:"pointer",fontSize:11}}>✏️</button>
+</div>
+</div>
+))}
+<div style={{marginTop:14,padding:"10px 14px",background:theme.light,borderRadius:10,display:"flex",justifyContent:"space-between"}}>
+<span style={{fontSize:12,color:"#64748b"}}>סה"כ יום</span>
+<span style={{fontSize:13,fontWeight:800,color:theme.acc}}>₪{selectedDay.daySpend.toLocaleString("he-IL")}</span>
+</div>
+</div>}
+</div>
 </div>
 )}
 
