@@ -348,8 +348,7 @@ const leftThisWeek = weeklyVariableBudget - spentThisWeek;
 const allWeeks = [...new Set(data.expenses.map(e => getWeekId(e.date)))].sort().reverse();
 const bucketSpendThisWeek = (id) => expensesThisWeek.filter(e=>e.bucketId===id).reduce((s,e)=>s+Number(e.amount),0);
 
-// Check if current week is done (past week) to suggest redistribution
-const currentWeekId = getWeekId();
+// isCurrentWeek for week nav button styling
 const isCurrentWeek = selectedWeek === currentWeekId;
 
 // ── Analytics ─────────────────────────────────────────────────────────────
