@@ -378,13 +378,17 @@ return { csStr, label: fmt2(cs)+"–"+fmt2(ce), total, budget: totalVariableBudg
 
 const alerts = [];
 data.variableBuckets.filter(b=>!b.trackingOnly).forEach(b => {
-const wB = Number(b.amount)/weeksInMonth;
-const spent = bucketSpendThisWeek(b.id);
-const pct80 = spent/wB;
-if (pct80 >= 0.8 && pct80 < 1) alerts.push({ type:"warn", msg:`${ICONS[b.icon]} ${b.name}: השתמשת ב-${Math.round(pct80*100)}% מהתקציב השבועי` });
-else if (pct80 >= 1) alerts.push({ type:"danger", msg:`${ICONS[b.icon]} ${b.name}: חרגת מהתקציב השבועי ב-₪${Math.round(spent-wB).toLocaleString("he-IL")}` });
+const monthlyBudgetB = Number(b.amount);
+const monthlySpentB = data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).reduce((s,e)=>s+Number(e.amount),0);
+const elapsedFraction = daysElapsed / cycleTotalDays;
+const expectedByNow = monthlyBudgetB * elapsedFraction;
+const pctOfMonth = monthlyBudgetB > 0 ? monthlySpentB / monthlyBudgetB : 0;
+const pctOfExpected = expectedByNow > 0 ? monthlySpentB / expectedByNow : 0;
+if (pctOfMonth >= 1) alerts.push({ type:"danger", msg:`${ICONS[b.icon]} ${b.name}: חרגת מהתקציב החודשי ב-₪${Math.round(monthlySpentB-monthlyBudgetB).toLocaleString("he-IL")}` });
+else if (pctOfExpected >= 1.4 && pctOfMonth >= 0.6) alerts.push({ type:"warn", msg:`${ICONS[b.icon]} ${b.name}: קצב מהיר — ${Math.round(pctOfMonth*100)}% מהתקציב החודשי נוצל` });
+else if (pctOfMonth >= 0.8) alerts.push({ type:"warn", msg:`${ICONS[b.icon]} ${b.name}: השתמשת ב-${Math.round(pctOfMonth*100)}% מהתקציב החודשי` });
 });
-if (fixedOverflowThisMonth > 0) alerts.push({ type:"warn", msg:`⚠️ חריגה בהוצאות קבועות: ₪${Math.round(fixedOverflowThisMonth).toLocaleString("he-IL")} מחולקת על ${weeksRemaining.toFixed(1)} שבועות` });
+if (fixedOverflowThisMonth > 0) alerts.push({ type:"warn", msg:`⚠️ חריגה בהוצאות קבועות: ₪${Math.round(fixedOverflowThisMonth).toLocaleString("he-IL")} החודש` });
 if (projectedSavings < 0) alerts.push({ type:"danger", msg:`📉 בקצב הנוכחי גירעון צפוי של ₪${Math.round(Math.abs(projectedSavings)).toLocaleString("he-IL")} החודש` });
 else if (projectedSavings > totalMonthlyIncome * 0.1) alerts.push({ type:"good", msg:`✓ חיסכון צפוי ₪${Math.round(projectedSavings).toLocaleString("he-IL")} החודש (עודף + משתנות לא מנוצלות)` });
 
@@ -864,6 +868,58 @@ return (
 <Tube label="budget" fillPct={budgetFillPct} gradA={budgetOver?"#f5c6c6":budgetFillPct<0.25?"#fce8b0":"#a8d5ba"} gradB={budgetOver?"#e07070":budgetFillPct<0.25?"#d4a040":"#6bbf8e"} title="תקציב שנשאר" sub={`₪${Math.abs(Math.round(leftThisWeek)).toLocaleString("he-IL")}`} extra={budgetOver?"חריגה!":null}/>
 </div>
 {/* Redistribution is automatic — no manual button needed */}
+</div>
+);
+})()}
+
+{/* Daily spending chart */}
+{(()=>{
+const dayMs=86400000;
+const days=[];
+let d=new Date(cycleStart);
+while(d<=cycleEnd&&d<=today){
+const ds=d.toISOString().slice(0,10);
+const daySpend=data.expenses.filter(e=>e.date===ds&&variableBucketIds.has(e.bucketId)&&!trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount),0);
+days.push({ds,daySpend,isToday:ds===today.toISOString().slice(0,10)});
+d=new Date(d.getTime()+dayMs);
+}
+if(days.length===0)return null;
+const maxSpend=Math.max(...days.map(x=>x.daySpend),1);
+const avgSpend=days.reduce((s,x)=>s+x.daySpend,0)/days.length;
+const dailyBudget=totalVariableOnBudget/cycleTotalDays;
+return(
+<div style={{marginBottom:16}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+<span style={{fontSize:13,fontWeight:700,color:"#334155"}}>הוצאות יומיות — החודש</span>
+<span style={{fontSize:11,color:"#94a3b8"}}>ממוצע ₪{Math.round(avgSpend).toLocaleString("he-IL")}/יום</span>
+</div>
+<div style={{background:"#fff",borderRadius:14,padding:"14px 12px 10px",boxShadow:"0 1px 6px rgba(0,0,0,.06)",overflowX:"auto"}}>
+<div style={{display:"flex",alignItems:"flex-end",gap:3,minWidth:Math.max(320,days.length*18),height:80,position:"relative"}}>
+<div style={{position:"absolute",bottom:Math.min(72,dailyBudget/maxSpend*72),left:0,right:0,borderTop:"1.5px dashed #c8d4e0",zIndex:1,pointerEvents:"none"}}/>
+{days.map((day,i)=>{
+const barH=day.daySpend>0?Math.max(3,(day.daySpend/maxSpend)*72):2;
+const over=day.daySpend>dailyBudget;
+const hot=day.daySpend>dailyBudget*1.8;
+const barColor=hot?"#e07070":over?"#e8b87c":day.daySpend>0?theme.btn:"#eef2f7";
+const dd=new Date(day.ds).getDate();
+return(
+<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:1,position:"relative",zIndex:2}}>
+<div title={day.ds+": ₪"+day.daySpend}
+style={{width:"100%",background:barColor,borderRadius:"3px 3px 0 0",height:barH,
+outline:day.isToday?"2px solid "+theme.acc:"none",
+outlineOffset:1,cursor:"default",minHeight:2,transition:"height .3s"}}/>
+{(dd===1||dd===5||dd===10||dd===15||dd===20||dd===25||day.isToday)&&
+<span style={{fontSize:8,color:day.isToday?theme.acc:"#94a3b8",fontWeight:day.isToday?800:400}}>{dd}</span>}
+</div>
+);
+})}
+</div>
+<div style={{display:"flex",justifyContent:"space-between",marginTop:4,fontSize:10,color:"#94a3b8"}}>
+<span>10/{new Date(cycleStart).getMonth()+1}</span>
+<span>— תקציב יומי ₪{Math.round(dailyBudget).toLocaleString("he-IL")}</span>
+<span>9/{new Date(cycleEnd).getMonth()+1}</span>
+</div>
+</div>
 </div>
 );
 })()}
