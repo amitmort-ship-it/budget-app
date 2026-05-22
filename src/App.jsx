@@ -302,7 +302,7 @@ export default function App() {
   const cycleHistory = allCycleStarts.map(csStr => {
     const cs = new Date(csStr); const ce = new Date(cs); ce.setMonth(ce.getMonth()+1); ce.setDate(9);
     const cyExp = data.expenses.filter(e => { const d=new Date(e.date); d.setHours(0,0,0,0); return d>=cs&&d<=ce; });
-    const varExp = cyExp.filter(e=>onBudgetIds.has(e.bucketId));
+    const varExp = cyExp.filter(e=>variableBucketIds.has(e.bucketId));
     const total = varExp.reduce((s,e)=>s+Number(e.amount),0);
     const byBucket = data.variableBuckets.map(b=>({ id:b.id, name:b.name, icon:b.icon, spent:varExp.filter(e=>e.bucketId===b.id).reduce((s,e)=>s+Number(e.amount),0), budget:Number(b.amount) }));
     return { csStr, label: fmt2(cs)+"–"+fmt2(ce), total, budget: totalVariableBudget, byBucket };
@@ -310,7 +310,7 @@ export default function App() {
 
   // Projection: based on days elapsed in current cycle, extrapolate to full cycle
   const daysElapsed = Math.max(1, cycleTotalDays - daysLeft + 1);
-  const spentThisCycle = data.expenses.filter(e=>inCurrentCycle(e.date)&&onBudgetIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount),0);
+  const spentThisCycle = data.expenses.filter(e=>inCurrentCycle(e.date)&&variableBucketIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount),0);
   const projectedTotal = (spentThisCycle / daysElapsed) * cycleTotalDays;
   const projectionDiff = totalVariableBudget - projectedTotal;
 
