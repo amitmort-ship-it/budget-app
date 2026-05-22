@@ -207,8 +207,22 @@ useEffect(() => {
 loadFromSupabase().then(remote => {
 if (remote) {
 const merged = { ...DEFAULT_STATE, ...remote };
-setData(merged);
-try { localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch {}
+// Auto-add recurring expenses for current billing cycle
+const currentCycleStart = getCycleStart().toISOString().slice(0,10);
+const currentCycleEnd = (() => { const ce = getCycleStart(); ce.setMonth(ce.getMonth()+1); ce.setDate(9); return ce.toISOString().slice(0,10); })();
+const recurringBase = (merged.expenses||[]).filter(e => e.recurring && !e.isRecurringCopy);
+const toAutoAdd = [];
+recurringBase.forEach(base => {
+// Check if this recurring expense already has a copy in current cycle
+const alreadyHasCopy = (merged.expenses||[]).some(e => e.recurringBaseId === base.id && e.date >= currentCycleStart && e.date <= currentCycleEnd);
+if (!alreadyHasCopy && base.date < currentCycleStart) {
+toAutoAdd.push({ id: Math.random().toString(36).slice(2,10), bucketId: base.bucketId, amount: base.amount, note: base.note||"", date: currentCycleStart, paymentMethodId: base.paymentMethodId||"", createdAt: Date.now(), isRecurringCopy: true, recurringBaseId: base.id });
+}
+});
+const finalData = toAutoAdd.length > 0 ? { ...merged, expenses: [...merged.expenses, ...toAutoAdd] } : merged;
+setData(finalData);
+try { localStorage.setItem(STORAGE_KEY, JSON.stringify(finalData)); } catch {}
+if (toAutoAdd.length > 0) saveToSupabase(finalData);
 setLastSync(new Date());
 }
 });
@@ -289,6 +303,7 @@ const remaining = totalMonthlyIncome - totalBudget;
 const trackingOnlyIds = new Set(data.variableBuckets.filter(b=>b.trackingOnly).map(b=>b.id));
 const variableBucketIds = new Set(data.variableBuckets.map(b => b.id));
 const fixedBucketIds = new Set(data.fixedBuckets.map(b=>b.id));
+const fixedSavingsBudget = activeFixed.filter(b=>b.isSavings).reduce((s,b)=>s+getMonthlyAmount(b),0);
 
 // Total monthly budget INCLUDING tracking-only (for analytics projection)
 const totalVariableBudgetIncl = data.variableBuckets.reduce((s,b) => s + Number(b.amount||0), 0);
@@ -340,7 +355,7 @@ const projectedTotal = (spentThisCycle / daysElapsed) * cycleTotalDays;
 const projectedVariableSpend = projectedTotal;
 const expectedSurplus = totalMonthlyIncome - totalBudgetIncl;
 const projectedUnspentVariable = totalVariableBudgetIncl - projectedVariableSpend;
-const projectedSavings = expectedSurplus + projectedUnspentVariable;
+const projectedSavings = expectedSurplus + projectedUnspentVariable + fixedSavingsBudget;
 const projectionDiff = projectedSavings;
 
 const cycleHistory = allCycleStarts.map(csStr => {
@@ -399,7 +414,7 @@ showToast("באקט נוסף ✓");
 const saveBucketEdit = () => {
 if (!editBucket.name || !editBucket.amount) return showToast("נא למלא שם וסכום", "#e07070");
 const key = editBucket.type==="fixed"?"fixedBuckets":"variableBuckets";
-save({ ...data, [key]: data[key].map(b=>b.id===editBucket.id?{...b, name:editBucket.name, amount:Number(editBucket.amount), icon:editBucket.icon, ...(editBucket.type==="variable"?{trackingOnly:!!editBucket.trackingOnly}:{}), ...(editBucket.type==="fixed"?{isRecurring:!!editBucket.isRecurring}:{})}:b) });
+save({ ...data, [key]: data[key].map(b=>b.id===editBucket.id?{...b, name:editBucket.name, amount:Number(editBucket.amount), icon:editBucket.icon, ...(editBucket.type==="variable"?{trackingOnly:!!editBucket.trackingOnly}:{}), ...(editBucket.type==="fixed"?{isRecurring:!!editBucket.isRecurring, isSavings:!!editBucket.isSavings}:{})}:b) });
 setEditBucket(null); showToast("באקט עודכן ✓");
 };
 
@@ -880,7 +895,7 @@ const wB=Number(b.amount)/weeksInMonth; const spent=bucketSpendThisWeek(b.id); c
 return (<div key={b.id} style={{...cardStyle,padding:"12px 14px",marginBottom:8}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
 <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:20}}>{ICONS[b.icon]}</span><span style={{fontSize:14,fontWeight:600}}>{b.name}</span>{b.trackingOnly&&<span style={{fontSize:9,background:"#fdf6e8",color:"#b07020",padding:"2px 5px",borderRadius:4,fontWeight:700}}>מעקב</span>}</div>
-<div style={{fontSize:12,color:"#6b7a8d"}}><span style={{color:bc,fontWeight:700}}>₪{spent.toLocaleString("he-IL",{maximumFractionDigits:0})}</span>{" / "}₪{wB.toLocaleString("he-IL",{maximumFractionDigits:0})}</div>
+<div style={{fontSize:12,color:"#6b7a8d"}}><span style={{color:bc,fontWeight:700}}>₪{spent.toLocaleString("he-IL",{maximumFractionDigits:0})}</span>{" / "}₪{Number(b.amount).toLocaleString("he-IL",{maximumFractionDigits:0})}</div>
 </div>
 <div style={{background:"#eef2f7",borderRadius:6,height:5,overflow:"hidden"}}><div style={{background:bc,height:"100%",width:`${p}%`,transition:"width .3s",borderRadius:6}}/></div>
 </div>);
@@ -916,9 +931,10 @@ return (
 <div>
 <div style={{fontSize:13,fontWeight:600}}>{getBucketName(e.bucketId)}</div>
 {e.note&&<div style={{fontSize:11,color:"#94a3b8"}}>{e.note}</div>}
-<div style={{fontSize:11,color:"#c0cad8",display:"flex",gap:6,marginTop:2}}>
+<div style={{fontSize:11,color:"#c0cad8",display:"flex",gap:6,marginTop:2,flexWrap:"wrap"}}>
 <span>{new Date(e.date).toLocaleDateString("he-IL")}</span>
 <span style={{background:fixedBucketIds.has(e.bucketId)?"#fdf6e8":"#eef4fb",color:fixedBucketIds.has(e.bucketId)?"#b07020":"#4a7fa5",padding:"0 4px",borderRadius:3,fontSize:10}}>{fixedBucketIds.has(e.bucketId)?"קבועה":"משתנה"}</span>
+{e.recurring&&<span style={{background:"#edf7f1",color:"#3d7a55",padding:"0 4px",borderRadius:3,fontSize:10,fontWeight:700}}>🔄 מחזורי</span>}
 {e.paymentMethodId&&<span style={{color:theme.acc}}>{getPMLabel(e.paymentMethodId)}</span>}
 </div>
 </div>
@@ -1037,10 +1053,15 @@ style={{...cardStyle,border:isEditing?"2px solid "+theme.fixedText:hasOver?"1.5p
 <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>
 {Object.entries(ICONS).slice(11).map(([k,v])=>(<button key={k} onClick={()=>setEditBucket(p=>({...p,icon:k}))} style={{background:editBucket.icon===k?theme.fixedBg:"#f1f5f9",border:editBucket.icon===k?"2px solid "+theme.fixedText:"2px solid transparent",borderRadius:7,padding:"5px 8px",fontSize:15,cursor:"pointer"}}>{v}</button>))}
 </div>
-<div onClick={()=>setEditBucket(p=>({...p,isRecurring:!p.isRecurring}))} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",marginBottom:10,background:editBucket.isRecurring?"#edf7f1":"#f4f7fb",border:editBucket.isRecurring?"1.5px solid #a8d5ba":"1.5px solid #dde4ed",borderRadius:8,cursor:"pointer",userSelect:"none"}}>
+<div onClick={()=>setEditBucket(p=>({...p,isRecurring:!p.isRecurring}))} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",marginBottom:8,background:editBucket.isRecurring?"#edf7f1":"#f4f7fb",border:editBucket.isRecurring?"1.5px solid #a8d5ba":"1.5px solid #dde4ed",borderRadius:8,cursor:"pointer",userSelect:"none"}}>
 <span style={{fontSize:14}}>🔄</span>
 <span style={{fontSize:12,fontWeight:600,color:editBucket.isRecurring?"#3d7a55":"#6b7a8d",flex:1}}>חיוב מחזורי אוטומטי</span>
 <div style={{width:32,height:18,background:editBucket.isRecurring?"#6bbf8e":"#dde4ed",borderRadius:9,position:"relative",transition:"background 0.2s"}}><div style={{position:"absolute",top:2,left:editBucket.isRecurring?14:2,width:14,height:14,background:"#fff",borderRadius:"50%",transition:"left 0.2s"}}/></div>
+</div>
+<div onClick={()=>setEditBucket(p=>({...p,isSavings:!p.isSavings}))} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",marginBottom:10,background:editBucket.isSavings?"#edf4fb":"#f4f7fb",border:editBucket.isSavings?"1.5px solid #aed4f0":"1.5px solid #dde4ed",borderRadius:8,cursor:"pointer",userSelect:"none"}}>
+<span style={{fontSize:14}}>🐷</span>
+<span style={{fontSize:12,fontWeight:600,color:editBucket.isSavings?"#4a7fa5":"#6b7a8d",flex:1}}>הוצאה זו הולכת לחסכון — נספרת כחיסכון</span>
+<div style={{width:32,height:18,background:editBucket.isSavings?"#6a9bc3":"#dde4ed",borderRadius:9,position:"relative",transition:"background 0.2s"}}><div style={{position:"absolute",top:2,left:editBucket.isSavings?14:2,width:14,height:14,background:"#fff",borderRadius:"50%",transition:"left 0.2s"}}/></div>
 </div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
 <button onClick={()=>setEditBucket(null)} style={{background:"#f1f5f9",color:"#64748b",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>ביטול</button>
@@ -1057,6 +1078,7 @@ style={{...cardStyle,border:isEditing?"2px solid "+theme.fixedText:hasOver?"1.5p
 <div style={{display:"flex",alignItems:"center",gap:6}}>
 <span style={{fontSize:14,fontWeight:700}}>{b.name}</span>
 {b.isRecurring&&<span style={{fontSize:9,background:"#edf7f1",color:"#3d7a55",padding:"1px 5px",borderRadius:4,fontWeight:700}}>🔄 מחזורי</span>}
+{b.isSavings&&<span style={{fontSize:9,background:"#edf4fb",color:"#4a7fa5",padding:"1px 5px",borderRadius:4,fontWeight:700}}>🐷 חסכון</span>}
 </div>
 <div style={{fontSize:13,color:"#6b7a8d"}}>
 {b.isInstallment
@@ -1240,6 +1262,7 @@ onKeyDown={e=>e.key==="Enter"&&updateSnapshotBalance(item.id,e.target.value)}/>
 <div style={{fontSize:12,opacity:.85,marginTop:6,display:"flex",flexDirection:"column",gap:3}}>
 <span>📌 עודף לא מתוקצב: ₪{Math.round(expectedSurplus).toLocaleString("he-IL")}</span>
 <span>🔄 עודף משתנות (צפי): {projectedUnspentVariable>=0?`₪${Math.round(projectedUnspentVariable).toLocaleString("he-IL")}`:`-₪${Math.round(Math.abs(projectedUnspentVariable)).toLocaleString("he-IL")}`}</span>
+{fixedSavingsBudget>0&&<span>🏦 חסכון מקבועות: ₪{Math.round(fixedSavingsBudget).toLocaleString("he-IL")}</span>}
 </div>
 <div style={{marginTop:10,background:"rgba(255,255,255,.25)",borderRadius:8,height:8,overflow:"hidden"}}>
 <div style={{background:projectedSavings>=0?"rgba(255,255,255,.85)":"rgba(224,112,112,.8)",height:"100%",width:`${Math.min(100,totalMonthlyIncome>0?(Math.max(0,projectedSavings)/totalMonthlyIncome)*100:0)}%`,borderRadius:8,transition:"width .4s"}}/>
@@ -1587,7 +1610,12 @@ return (<>
 <input type="number" placeholder="סכום ₪" value={exp.amount} onChange={e=>setExp(p=>({...p,amount:e.target.value}))} style={{...inputStyle,fontSize:14}}/>
 <input type="date" value={exp.date} onChange={e=>setExp(p=>({...p,date:e.target.value}))} style={{...inputStyle,fontSize:14}}/>
 </div>
-<input placeholder="הערה (אופציונלי)" value={exp.note} onChange={e=>setExp(p=>({...p,note:e.target.value}))} style={{...inputStyle,width:"100%",marginBottom:16,fontSize:14,boxSizing:"border-box"}}/>
+<input placeholder="הערה (אופציונלי)" value={exp.note} onChange={e=>setExp(p=>({...p,note:e.target.value}))} style={{...inputStyle,width:"100%",marginBottom:10,fontSize:14,boxSizing:"border-box"}}/>
+<div onClick={()=>setExp(p=>({...p,recurring:!p.recurring}))} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",marginBottom:14,background:exp.recurring?"#edf7f1":"#f4f7fb",border:exp.recurring?"1.5px solid #a8d5ba":"1.5px solid #dde4ed",borderRadius:8,cursor:"pointer",userSelect:"none"}}>
+<span style={{fontSize:14}}>🔄</span>
+<span style={{fontSize:12,fontWeight:600,color:exp.recurring?"#3d7a55":"#6b7a8d",flex:1}}>הוצאה מחזורית — תחזור כל חודש אוטומטית</span>
+<div style={{width:32,height:18,background:exp.recurring?"#6bbf8e":"#dde4ed",borderRadius:9,position:"relative",transition:"background 0.2s"}}><div style={{position:"absolute",top:2,left:exp.recurring?14:2,width:14,height:14,background:"#fff",borderRadius:"50%",transition:"left 0.2s"}}/></div>
+</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
 <button onClick={()=>{editExpense?setEditExpense(null):setView("dashboard");}} style={{background:"#f1f5f9",color:"#64748b",border:"none",borderRadius:10,padding:14,fontSize:14,fontWeight:600,cursor:"pointer"}}>ביטול</button>
 <button onClick={()=>{editExpense?saveExpenseEdit():addExpense();}} style={{background:theme.btn,color:"#fff",border:"none",borderRadius:10,padding:14,fontSize:14,fontWeight:700,cursor:"pointer"}}>{editExpense?"עדכן":"שמור"}</button>
