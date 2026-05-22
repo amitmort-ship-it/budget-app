@@ -336,7 +336,12 @@ const spentThisCycle = data.expenses.filter(e=>inCurrentCycle(e.date)&&variableB
 const daysElapsed = Math.max(1, cycleTotalDays - daysLeft + 1);
 const projectedTotal = (spentThisCycle / daysElapsed) * cycleTotalDays;
 // Use total budget including tracking-only for accurate projection comparison
-const projectionDiff = totalBudgetIncl - projectedTotal;
+// Expected savings = income - fixed expenses - projected variable spending
+const projectedVariableSpend = projectedTotal;
+const expectedSurplus = totalMonthlyIncome - totalBudgetIncl;
+const projectedUnspentVariable = totalVariableBudgetIncl - projectedVariableSpend;
+const projectedSavings = expectedSurplus + projectedUnspentVariable;
+const projectionDiff = projectedSavings;
 
 const cycleHistory = allCycleStarts.map(csStr => {
 const cs = new Date(csStr); const ce = new Date(cs); ce.setMonth(ce.getMonth()+1); ce.setDate(9);
@@ -356,8 +361,8 @@ if (pct80 >= 0.8 && pct80 < 1) alerts.push({ type:"warn", msg:`${ICONS[b.icon]} 
 else if (pct80 >= 1) alerts.push({ type:"danger", msg:`${ICONS[b.icon]} ${b.name}: חרגת מהתקציב השבועי ב-₪${Math.round(spent-wB).toLocaleString("he-IL")}` });
 });
 if (fixedOverflowThisMonth > 0) alerts.push({ type:"warn", msg:`⚠️ חריגה בהוצאות קבועות: ₪${Math.round(fixedOverflowThisMonth).toLocaleString("he-IL")} מחולקת על ${weeksRemaining.toFixed(1)} שבועות` });
-if (projectedTotal > totalBudgetIncl * 1.1) alerts.push({ type:"danger", msg:`📉 בקצב הנוכחי תחרוג ב-₪${Math.round(projectedTotal-totalBudgetIncl).toLocaleString("he-IL")} החודש` });
-else if (projectedTotal < totalBudgetIncl * 0.85) alerts.push({ type:"good", msg:`✓ בקצב מצוין — צפי לחיסכון ₪${Math.round(totalBudgetIncl-projectedTotal).toLocaleString("he-IL")} החודש` });
+if (projectedSavings < 0) alerts.push({ type:"danger", msg:`📉 בקצב הנוכחי גירעון צפוי של ₪${Math.round(Math.abs(projectedSavings)).toLocaleString("he-IL")} החודש` });
+else if (projectedSavings > totalMonthlyIncome * 0.1) alerts.push({ type:"good", msg:`✓ חיסכון צפוי ₪${Math.round(projectedSavings).toLocaleString("he-IL")} החודש (עודף + משתנות לא מנוצלות)` });
 
 const getBucketName = (id) => { const b=[...data.fixedBuckets,...data.variableBuckets].find(b=>b.id===id); return b?`${ICONS[b.icon]||"📌"} ${b.name}`:"—"; };
 const getBucketType = (id) => { if (fixedBucketIds.has(id)) return "קבועה"; if (variableBucketIds.has(id)) return "משתנה"; return "—"; };
@@ -1230,19 +1235,22 @@ onKeyDown={e=>e.key==="Enter"&&updateSnapshotBalance(item.id,e.target.value)}/>
 
 {/* Projection — now includes tracking-only buckets in budget */}
 <div style={{background:`linear-gradient(135deg,${theme.a},${theme.b})`,borderRadius:16,padding:"18px 20px",marginBottom:16,color:"#fff"}}>
-<div style={{fontSize:12,opacity:.85,marginBottom:4}}>תחזית לסוף החודש</div>
-<div style={{fontSize:28,fontWeight:900}}>₪{Math.round(projectedTotal).toLocaleString("he-IL")}</div>
-<div style={{fontSize:13,opacity:.85,marginTop:4}}>
-{projectionDiff>0?`✓ צפי לחיסכון ₪${Math.round(projectionDiff).toLocaleString("he-IL")}`:`⚠ צפי לחריגה ₪${Math.round(-projectionDiff).toLocaleString("he-IL")}`}
+<div style={{fontSize:12,opacity:.85,marginBottom:4}}>💰 חיסכון צפוי החודש</div>
+<div style={{fontSize:28,fontWeight:900}}>{projectedSavings>=0?`₪${Math.round(projectedSavings).toLocaleString("he-IL")}`:`-₪${Math.round(Math.abs(projectedSavings)).toLocaleString("he-IL")}`}</div>
+<div style={{fontSize:12,opacity:.85,marginTop:6,display:"flex",flexDirection:"column",gap:3}}>
+<span>📌 עודף לא מתוקצב: ₪{Math.round(expectedSurplus).toLocaleString("he-IL")}</span>
+<span>🔄 עודף משתנות (צפי): {projectedUnspentVariable>=0?`₪${Math.round(projectedUnspentVariable).toLocaleString("he-IL")}`:`-₪${Math.round(Math.abs(projectedUnspentVariable)).toLocaleString("he-IL")}`}</span>
 </div>
-<div style={{marginTop:12,background:"rgba(255,255,255,.25)",borderRadius:8,height:8,overflow:"hidden"}}>
-<div style={{background:"rgba(255,255,255,.85)",height:"100%",width:`${Math.min(100,(projectedTotal/totalBudgetIncl)*100)}%`,borderRadius:8,transition:"width .4s"}}/>
+<div style={{marginTop:10,background:"rgba(255,255,255,.25)",borderRadius:8,height:8,overflow:"hidden"}}>
+<div style={{background:projectedSavings>=0?"rgba(255,255,255,.85)":"rgba(224,112,112,.8)",height:"100%",width:`${Math.min(100,totalMonthlyIncome>0?(Math.max(0,projectedSavings)/totalMonthlyIncome)*100:0)}%`,borderRadius:8,transition:"width .4s"}}/>
 </div>
 <div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginTop:5,opacity:.8}}>
-<span>₪{Math.round(spentThisCycle).toLocaleString("he-IL")} הוצא ({Math.round(daysElapsed)} ימים)</span>
-<span>תקציב כולל: ₪{Math.round(totalBudgetIncl).toLocaleString("he-IL")}</span>
+<span>הוצאה משתנות (צפי): ₪{Math.round(projectedVariableSpend).toLocaleString("he-IL")}</span>
+<span>הכנסה: ₪{Math.round(totalMonthlyIncome).toLocaleString("he-IL")}</span>
 </div>
-<div style={{fontSize:10,opacity:.7,marginTop:4}}>* כולל קטגוריות מעקב (מזון, בלת"מ)</div>
+<div style={{fontSize:10,opacity:.7,marginTop:4,borderTop:"1px solid rgba(255,255,255,.2)",paddingTop:6}}>
+הוצא עד כה: ₪{Math.round(spentThisCycle).toLocaleString("he-IL")} | {Math.round(daysElapsed)} ימים מתוך {cycleTotalDays}
+</div>
 </div>
 
 {/* Category breakdown — with remaining budget per category */}
