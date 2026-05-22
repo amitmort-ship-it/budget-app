@@ -313,22 +313,33 @@ const fixedOverflowThisMonth = activeFixed.reduce((total,b) => {
 const spent = data.expenses.filter(e => e.bucketId===b.id && inCurrentCycle(e.date)).reduce((s,e)=>s+Number(e.amount),0);
 return total + Math.max(0, spent - getMonthlyAmount(b));
 }, 0);
-const weeklyFixedOverflowPenalty = fixedOverflowThisMonth / weeksRemaining;
 const totalVariableOnBudget = data.variableBuckets.filter(b=>!b.trackingOnly).reduce((s,b)=>s+Number(b.amount||0),0);
-const baseWeeklyVariableBudget = totalVariableOnBudget / weeksInMonth;
 
-// ── Weekly budget redistribution for overruns/savings ────────────────────
-// Check if there was a previous week overrun or saving
-const prevWeekId = (() => { const d = new Date(selectedWeek); d.setDate(d.getDate()-7); return getWeekId(d); })();
-const allPreviousWeeks = [...new Set(data.expenses.map(e => getWeekId(e.date)))].filter(w => w < getWeekId()).sort();
-const weeklyBudgetOverrides = data.weeklyBudgetOverrides || {};
-
-// Calculate adjusted weekly budget based on past overruns/savings
-const getAdjustedWeeklyBudget = (weekId) => {
-if (weeklyBudgetOverrides[weekId] !== undefined) return weeklyBudgetOverrides[weekId];
-return Math.max(0, baseWeeklyVariableBudget - weeklyFixedOverflowPenalty);
+// ── Automatic dynamic weekly budget ──────────────────────────────────────
+// Budget this week = (monthly variable budget - already spent in past completed weeks - fixed overflow) / weeks remaining
+const currentWeekId = getWeekId();
+const allCycleWeekIds = (() => {
+const weeks = []; let cur = new Date(cycleStart);
+while (cur <= cycleEnd) { weeks.push(getWeekId(cur)); cur.setDate(cur.getDate()+7); }
+return [...new Set(weeks)];
+})();
+const pastCycleWeekIds = allCycleWeekIds.filter(w => w < currentWeekId);
+const spentInPastCycleWeeks = pastCycleWeekIds.reduce((total, wid) => {
+return total + data.expenses.filter(e => getWeekId(e.date)===wid && inCurrentCycle(e.date) && variableBucketIds.has(e.bucketId) && !trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
+}, 0);
+const weeksRemainingInCycle = allCycleWeekIds.filter(w => w >= currentWeekId).length;
+const dynamicWeeklyBudget = Math.max(0, (totalVariableOnBudget - spentInPastCycleWeeks - fixedOverflowThisMonth) / Math.max(1, weeksRemainingInCycle));
+const weeklyFixedOverflowPenalty = fixedOverflowThisMonth / Math.max(1, weeksRemainingInCycle);
+// For a selected past week: proportional share based on days in cycle
+const getWeekBudget = (weekId) => {
+if (weekId >= currentWeekId) return dynamicWeeklyBudget;
+const wStart = new Date(weekId); const wEnd = new Date(weekId); wEnd.setDate(wEnd.getDate()+6);
+const overlapStart = wStart < cycleStart ? cycleStart : wStart;
+const overlapEnd = wEnd > cycleEnd ? cycleEnd : wEnd;
+const daysInCycle = Math.max(0, (overlapEnd - overlapStart) / 86400000 + 1);
+return totalVariableOnBudget * (daysInCycle / cycleTotalDays);
 };
-const weeklyVariableBudget = getAdjustedWeeklyBudget(selectedWeek);
+const weeklyVariableBudget = getWeekBudget(selectedWeek);
 
 const expensesThisWeek = data.expenses.filter(e => getWeekId(e.date) === selectedWeek);
 const spentThisWeek = expensesThisWeek.filter(e => variableBucketIds.has(e.bucketId) && !trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
@@ -340,7 +351,6 @@ const bucketSpendThisWeek = (id) => expensesThisWeek.filter(e=>e.bucketId===id).
 // Check if current week is done (past week) to suggest redistribution
 const currentWeekId = getWeekId();
 const isCurrentWeek = selectedWeek === currentWeekId;
-const weeksRemainingFromNow = Math.max(1, Math.ceil(daysLeft / 7));
 
 // ── Analytics ─────────────────────────────────────────────────────────────
 const getCycleBudget = () => totalVariableBudget;
@@ -498,21 +508,7 @@ save({ ...data, notes:(data.notes||[]).map(n=>n.id===editNote.id?{...n,...editNo
 setEditNote(null); showToast("רשומה עודכנה ✓");
 };
 
-// ── Weekly budget redistribution ──────────────────────────────────────────
-const handleWeeklyRedistribution = (overrunOrSaving, weeksLeft) => {
-// overrunOrSaving: positive = overspend (reduce future weeks), negative = saving (increase)
-const adjustment = -overrunOrSaving / weeksLeft;
-const overrides = { ...(data.weeklyBudgetOverrides || {}) };
-const curWeekId = getWeekId();
-let cur = new Date(curWeekId);
-for (let i = 0; i < weeksLeft; i++) {
-const wid = getWeekId(cur);
-overrides[wid] = (overrides[wid] !== undefined ? overrides[wid] : baseWeeklyVariableBudget) + adjustment;
-cur.setDate(cur.getDate() + 7);
-}
-save({ ...data, weeklyBudgetOverrides: overrides });
-showToast(overrunOrSaving > 0 ? "תקציב השבועות הבאים הותאם לחריגה ✓" : "תקציב השבועות הבאים הוגדל לחיסכון ✓");
-};
+// ── Weekly redistribution is now fully automatic via dynamic budget ──
 
 const theme = THEMES[data.theme||"pastel"] || THEMES.pastel;
 
@@ -740,7 +736,7 @@ onClick={e=>{ if(showWeekPicker && !e.target.closest('[data-weekpicker]')) setSh
 </div>
 <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, marginTop:5, opacity:.8 }}>
 <span>₪{spentThisWeek.toLocaleString("he-IL",{maximumFractionDigits:0})} הוצאה{trackingSpentThisWeek>0?` + ₪${trackingSpentThisWeek.toLocaleString("he-IL",{maximumFractionDigits:0})} מעקב`:""}</span>
-<span>תקציב: ₪{weeklyVariableBudget.toLocaleString("he-IL",{maximumFractionDigits:0})}</span>
+<span>תקציב שבוע: ₪{weeklyVariableBudget.toLocaleString("he-IL",{maximumFractionDigits:0})}{selectedWeek>=currentWeekId&&weeksRemainingInCycle>1?<span style={{fontSize:9,opacity:.7}}> ({weeksRemainingInCycle} שבועות)</span>:null}</span>
 </div>
 {hasFixedOverflow && (
 <div style={{ marginTop:10, background:"rgba(224,112,112,.25)", borderRadius:10, padding:"8px 12px", fontSize:11, display:"flex", alignItems:"center", gap:6 }}>
@@ -868,20 +864,7 @@ return (
 </div>
 <Tube label="budget" fillPct={budgetFillPct} gradA={budgetOver?"#f5c6c6":budgetFillPct<0.25?"#fce8b0":"#a8d5ba"} gradB={budgetOver?"#e07070":budgetFillPct<0.25?"#d4a040":"#6bbf8e"} title="תקציב שנשאר" sub={`₪${Math.abs(Math.round(leftThisWeek)).toLocaleString("he-IL")}`} extra={budgetOver?"חריגה!":null}/>
 </div>
-{/* Weekly redistribution suggestion */}
-{!isCurrentWeek && leftThisWeek !== 0 && (
-<div style={{marginTop:14,padding:"10px 14px",background:leftThisWeek<0?"#fdf0f0":"#edf7f1",borderRadius:10,border:`1px solid ${leftThisWeek<0?"#f5c6c6":"#b8e8cc"}`}}>
-<div style={{fontSize:12,fontWeight:700,color:leftThisWeek<0?"#c05050":"#3d7a55",marginBottom:6}}>
-{leftThisWeek<0?
-`⚠️ חרגת ב-₪${Math.abs(Math.round(leftThisWeek)).toLocaleString("he-IL")} — לפצל על ${weeksRemainingFromNow} שבועות?`:
-`✓ נשאר ₪${Math.round(leftThisWeek).toLocaleString("he-IL")} — להוסיף לשבועות הבאים?`}
-</div>
-<button onClick={()=>handleWeeklyRedistribution(-leftThisWeek, weeksRemainingFromNow)}
-style={{width:"100%",background:leftThisWeek<0?"#e07070":theme.btn,color:"#fff",border:"none",borderRadius:8,padding:"8px",fontSize:12,fontWeight:700,cursor:"pointer"}}>
-{leftThisWeek<0?"התאם תקציב שבועות הבאים":"הגדל תקציב שבועות הבאים"}
-</button>
-</div>
-)}
+{/* Redistribution is automatic — no manual button needed */}
 </div>
 );
 })()}
