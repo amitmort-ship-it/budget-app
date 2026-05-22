@@ -1496,7 +1496,7 @@ style={{width:18,height:18,borderRadius:"50%",background:c,border:editNote.color
 <div style={cardStyle}>
 <div style={{fontSize:13,fontWeight:600,marginBottom:12}}>סיכום תקציב</div>
 <div style={{fontSize:11,color:"#94a3b8",marginBottom:10}}>מחזור: {cycleLabel} ({Math.round(daysLeft)} ימים נותרו)</div>
-{[{l:"הכנסה חודשית",v:totalMonthlyIncome,c:theme.incomeColor},{l:"הוצאות קבועות",v:totalFixed,c:"#e8b87c"},{l:"הוצאות משתנות",v:totalVariableBudget,c:theme.acc},{l:"מעקב (מזון/בלת"מ)",v:totalVariableBudgetIncl-totalVariableBudget,c:"#a0b4c8"},{l:"נשאר לא מתוקצב",v:totalMonthlyIncome-totalBudgetIncl,c:(totalMonthlyIncome-totalBudgetIncl)>=0?theme.incomeColor:"#e07070"}].map(x=>(
+{[{l:"הכנסה חודשית",v:totalMonthlyIncome,c:theme.incomeColor},{l:"הוצאות קבועות",v:totalFixed,c:"#e8b87c"},{l:"הוצאות משתנות",v:totalVariableBudget,c:theme.acc},{l:"מעקב (מזון/בלת\"מ)",v:totalVariableBudgetIncl-totalVariableBudget,c:"#a0b4c8"},{l:"נשאר לא מתוקצב",v:totalMonthlyIncome-totalBudgetIncl,c:(totalMonthlyIncome-totalBudgetIncl)>=0?theme.incomeColor:"#e07070"}].map(x=>(
 <div key={x.l} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #f1f5f9"}}>
 <span style={{fontSize:13,color:"#6b7a8d"}}>{x.l}</span>
 <span style={{fontSize:13,fontWeight:700,color:x.c}}>₪{Number(x.v||0).toLocaleString("he-IL")}</span>
