@@ -261,6 +261,7 @@ const dragItem = useRef(null);
 const dragOver = useRef(null);
 const ocrFileRef = useRef(null);
 const [selectedDay, setSelectedDay] = useState(null);
+const [expandedCategory, setExpandedCategory] = useState(null); // bucket id
 const save = useCallback((next) => {
 setData(next);
 try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
@@ -1327,10 +1328,13 @@ const budget=Number(b.amount);
 const remaining=budget-spent;
 const p=budget>0?Math.min(100,(spent/budget)*100):0;
 const col=p>100?"#e07070":p>80?"#e8b87c":theme.btn;
+const isExpanded = expandedCategory===b.id;
+const bucketExps = data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).sort((a,b2)=>new Date(b2.date)-new Date(a.date));
 return (
 <div key={b.id} style={{marginBottom:14}}>
-<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-<span style={{fontSize:13}}>{ICONS[b.icon]} {b.name}{b.trackingOnly&&<span style={{fontSize:9,background:"#fdf6e8",color:"#b07020",padding:"1px 4px",borderRadius:3,fontWeight:700,marginRight:3}}>מעקב</span>}</span>
+<div onClick={()=>setExpandedCategory(isExpanded?null:b.id)} style={{cursor:"pointer",userSelect:"none"}}>
+<div style={{display:"flex",justifyContent:"space-between",marginBottom:4,alignItems:"center"}}>
+<span style={{fontSize:13,display:"flex",alignItems:"center",gap:4}}>{ICONS[b.icon]} {b.name}{b.trackingOnly&&<span style={{fontSize:9,background:"#fdf6e8",color:"#b07020",padding:"1px 4px",borderRadius:3,fontWeight:700}}>מעקב</span>}<span style={{fontSize:10,color:"#94a3b8",marginRight:2}}>{isExpanded?"▲":"▼"}</span></span>
 <div style={{textAlign:"left"}}>
 <span style={{fontSize:12,fontWeight:700,color:col}}>₪{spent.toLocaleString("he-IL",{maximumFractionDigits:0})} / ₪{budget.toLocaleString("he-IL")}</span>
 </div>
@@ -1341,6 +1345,26 @@ return (
 <div style={{fontSize:11,color:remaining>=0?theme.acc:"#e07070",fontWeight:700}}>
 {remaining>=0?`נשאר: ₪${remaining.toLocaleString("he-IL",{maximumFractionDigits:0})}`:`חריגה: ₪${Math.abs(remaining).toLocaleString("he-IL",{maximumFractionDigits:0})}`}
 </div>
+</div>
+{isExpanded&&(
+<div style={{background:"#f8fafc",borderRadius:10,marginTop:6,padding:"4px 0",border:"1px solid #e8eef5"}}>
+{bucketExps.length===0
+?<div style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:"10px 0"}}>אין הוצאות החודש</div>
+:bucketExps.map(e=>(
+<div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",borderBottom:"1px solid #f1f5f9"}}>
+<div style={{flex:1}}>
+<div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{e.note||"—"}</div>
+<div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{new Date(e.date).toLocaleDateString("he-IL",{day:"numeric",month:"numeric"})}</div>
+</div>
+<div style={{display:"flex",alignItems:"center",gap:8}}>
+<span style={{fontWeight:800,color:"#e07070",fontSize:13}}>₪{Number(e.amount).toLocaleString("he-IL")}</span>
+<button onClick={ev=>{ev.stopPropagation();setEditExpense({...e});}} style={{background:theme.btnLight,border:"none",color:theme.btn,borderRadius:6,padding:"2px 6px",cursor:"pointer",fontSize:10}}>✏️</button>
+</div>
+</div>
+))
+}
+</div>
+)}
 </div>
 );
 })}
@@ -1353,10 +1377,13 @@ const spent=data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).r
 const remaining=monthly-spent;
 const p=monthly>0?Math.min(100,(spent/monthly)*100):0;
 const col=p>100?"#e07070":p>80?"#e8b87c":"#6bbf8e";
+const isExpandedF = expandedCategory===b.id;
+const bucketExpsF = data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).sort((a,b2)=>new Date(b2.date)-new Date(a.date));
 return (
 <div key={b.id} style={{marginBottom:14}}>
-<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-<span style={{fontSize:13}}>{ICONS[b.icon]} {b.name}</span>
+<div onClick={()=>setExpandedCategory(isExpandedF?null:b.id)} style={{cursor:"pointer",userSelect:"none"}}>
+<div style={{display:"flex",justifyContent:"space-between",marginBottom:4,alignItems:"center"}}>
+<span style={{fontSize:13,display:"flex",alignItems:"center",gap:4}}>{ICONS[b.icon]} {b.name}<span style={{fontSize:10,color:"#94a3b8",marginRight:2}}>{isExpandedF?"▲":"▼"}</span></span>
 <span style={{fontSize:12,fontWeight:700,color:col}}>₪{spent.toLocaleString("he-IL",{maximumFractionDigits:0})} / ₪{monthly.toLocaleString("he-IL",{maximumFractionDigits:0})}</span>
 </div>
 <div style={{background:"#eef2f7",borderRadius:6,height:7,overflow:"hidden",marginBottom:4}}>
@@ -1365,6 +1392,26 @@ return (
 <div style={{fontSize:11,color:remaining>=0?"#6bbf8e":"#e07070",fontWeight:700}}>
 {remaining>=0?`נשאר: ₪${remaining.toLocaleString("he-IL",{maximumFractionDigits:0})}`:`חריגה: ₪${Math.abs(remaining).toLocaleString("he-IL",{maximumFractionDigits:0})}`}
 </div>
+</div>
+{isExpandedF&&(
+<div style={{background:"#f8fafc",borderRadius:10,marginTop:6,padding:"4px 0",border:"1px solid #e8eef5"}}>
+{bucketExpsF.length===0
+?<div style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:"10px 0"}}>אין הוצאות החודש</div>
+:bucketExpsF.map(e=>(
+<div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",borderBottom:"1px solid #f1f5f9"}}>
+<div style={{flex:1}}>
+<div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{e.note||"—"}</div>
+<div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{new Date(e.date).toLocaleDateString("he-IL",{day:"numeric",month:"numeric"})}</div>
+</div>
+<div style={{display:"flex",alignItems:"center",gap:8}}>
+<span style={{fontWeight:800,color:"#e07070",fontSize:13}}>₪{Number(e.amount).toLocaleString("he-IL")}</span>
+<button onClick={ev=>{ev.stopPropagation();setEditExpense({...e});}} style={{background:theme.fixedBg,border:"none",color:theme.fixedText,borderRadius:6,padding:"2px 6px",cursor:"pointer",fontSize:10}}>✏️</button>
+</div>
+</div>
+))
+}
+</div>
+)}
 </div>
 );
 })}
