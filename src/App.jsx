@@ -538,7 +538,7 @@ const handleOcrUpload = async (file) => {
       showToast("מעבד תמונה...", "#6a9bc3");
       const base64 = imgSrc.split(",")[1];
       const mimeType = file.type || "image/jpeg";
-      const prompt = "Image of a credit card statement or receipt in Hebrew/English. Extract all expense transactions. Return ONLY valid JSON array, no markdown. Format: [{note: string, amount: positive number, date: YYYY-MM-DD}]. Use today if no date. Extract every row you see.";
+      const prompt = "Image of credit card statement or receipt. Extract all expense transactions. Return ONLY valid JSON array, no markdown. Format: [{note: string, amount: positive number, date: YYYY-MM-DD}]. Use today if no date.";
       const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: {"Content-Type":"application/json"},
@@ -556,7 +556,7 @@ const handleOcrUpload = async (file) => {
         setOcrResults(parsed.map(r => ({amount:String(r.amount||""),date:r.date||new Date().toISOString().slice(0,10),note:r.note||r.merchant||"",bucketId:"",confirmed:true})));
       }
     } catch(err) {
-      showToast("שגיאת API - בדוק מפתח Gemini", "#e07070");
+      showToast("שגיאת API", "#e07070");
       setOcrResults([{amount:"",date:new Date().toISOString().slice(0,10),note:"",bucketId:"",confirmed:false}]);
     }
     setOcrLoading(false);
@@ -1633,15 +1633,15 @@ style={{width:18,height:18,borderRadius:"50%",background:c,border:editNote.color
 <div style={cardStyle}>
 <div style={{fontSize:13,fontWeight:600,marginBottom:12}}>סיכום תקציב</div>
 <div style={{fontSize:11,color:"#94a3b8",marginBottom:10}}>מחזור: {cycleLabel} ({Math.round(daysLeft)} ימים נותרו)</div>
-{[{l:"הכנסה חודשית",v:totalMonthlyIncome,c:theme.incomeColor},{l:"הוצאות קבועות",v:totalFixed,c:"#e8b87c"},{l:"הוצאות משתנות",v:totalVariableBudget,c:theme.acc},{l:"מעקב (מזון/בלת\"מ)",v:totalVariableBudgetIncl-totalVariableBudget,c:"#a0b4c8"},{l:"נשאר לא מתוקצב",v:totalMonthlyIncome-totalB<div style={{marginTop:20,borderTop:"1px solid #f1f5f9",paddingTop:16}}>
+{[{l:"הכנסה חודשית",v:totalMonthlyIncome,c:theme.incomeColor},{l:"הוצאות קבועות",v:totalFixed,c:"#e8b87c"},{l:"הוצאות משתנות",v:totalVariableBudget,c:theme.acc},{l:"מעקב (מזון/בלת\"מ)",v:totalVariableBudgetIncl-totalVariableBudget,c:"#a0b4c8"},{l:"נשאר לא מתוקצב",v:totalMonthlyIncome-totalBudgetIncl,c:(totalMonthlyIncome-totalBudgetIncl)>=0?theme.incomeCo<div style={{marginTop:20,borderTop:"1px solid #f1f5f9",paddingTop:16}}>
           <div style={{fontSize:13,fontWeight:700,marginBottom:4,color:theme.acc}}>מפתח Gemini API</div>
-          <div style={{fontSize:11,color:"#a3b8cc",marginBottom:10}}>נדרש לזיהוי הוצאות מתמונה אוטומטית · <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" style={{color:theme.acc}}>קבל מפתח חינמי ב aistudio.google.com</a></div>
+          <div style={{fontSize:11,color:"#a3b8cc",marginBottom:10}}>נדרש לזיהוי הוצאות מתמונה אוטומטית</div>
           <div style={{display:"flex",gap:8}}>
             <input type="password" value={geminiApiKey} onChange={e=>setGeminiApiKey(e.target.value)} placeholder="הדבק מפתח API" style={{flex:1,border:"1px solid #dde4ed",borderRadius:8,padding:"8px 12px",fontSize:13,outline:"none",boxSizing:"border-box"}} />
             <button onClick={()=>{localStorage.setItem("gemini_api_key",geminiApiKey);showToast("מפתח נשמר ✓","#6a9bc3");}} style={{background:theme.btn,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,cursor:"pointer",flexShrink:0}}>שמור</button>
           </div>
         </div>
-        udgetIncl,c:(totalMonthlyIncome-totalBudgetIncl)>=0?theme.incomeColor:"#e07070"}].map(x=>(
+        lor:"#e07070"}].map(x=>(
 <div key={x.l} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #f1f5f9"}}>
 <span style={{fontSize:13,color:"#6b7a8d"}}>{x.l}</span>
 <span style={{fontSize:13,fontWeight:700,color:x.c}}>₪{Number(x.v||0).toLocaleString("he-IL")}</span>
