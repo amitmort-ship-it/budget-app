@@ -741,7 +741,7 @@ onClick={e=>{ if(showWeekPicker && !e.target.closest('[data-weekpicker]')) setSh
 </div>
 <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, marginTop:5, opacity:.8 }}>
 <span>₪{spentThisWeek.toLocaleString("he-IL",{maximumFractionDigits:0})} הוצאה{trackingSpentThisWeek>0?` + ₪${trackingSpentThisWeek.toLocaleString("he-IL",{maximumFractionDigits:0})} מעקב`:""}</span>
-<span>תקציב שבוע: ₪{weeklyVariableBudget.toLocaleString("he-IL",{maximumFractionDigits:0})}{selectedWeek>=currentWeekId&&weeksRemainingInCycle>1?<span style={{fontSize:9,opacity:.7}}> ({weeksRemainingInCycle} שבועות)</span>:null}</span>
+<span>תקציב שבוע: ₪{weeklyVariableBudget.toLocaleString("he-IL",{maximumFractionDigits:0})}{selectedWeek>=currentWeekId&&weeksRemainingInCycle>1?<span style={{fontSize:9,opacity:.7}}> ({weeksRemainingInCycle} שבועות)</span>:null}{selectedWeek>currentWeekId?<span style={{fontSize:9,background:"rgba(234,179,8,.2)",borderRadius:4,padding:"1px 5px",marginRight:4,color:"#b45309"}}>📅 צפוי</span>:null}</span>
 </div>
 {hasFixedOverflow && (
 <div style={{ marginTop:10, background:"rgba(224,112,112,.25)", borderRadius:10, padding:"8px 12px", fontSize:11, display:"flex", alignItems:"center", gap:6 }}>
@@ -775,8 +775,8 @@ style={{ width:"100%", border:"1.5px solid #dde4ed", borderRadius:8, padding:"8p
 </div>
 )}
 </div>
-<button onClick={()=>{ const d=new Date(selectedWeek); d.setDate(d.getDate()+7); const next=getWeekId(d); if(next<=getWeekId()) setSelectedWeek(next); }}
-style={{ background:"rgba(255,255,255,.25)", border:"none", color:new Date(selectedWeek)>=new Date(getWeekId())?"rgba(255,255,255,.35)":"#fff", borderRadius:10, width:32, height:32, fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>›</button>
+<button onClick={()=>{ const d=new Date(selectedWeek); d.setDate(d.getDate()+7); const next=getWeekId(d); setSelectedWeek(next); }}
+style={{ background:"rgba(255,255,255,.25)", border:"none", color:"#fff", borderRadius:10, width:32, height:32, fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>›</button>
 </div>
 </div>
 
