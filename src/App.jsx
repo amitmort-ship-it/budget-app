@@ -1633,15 +1633,7 @@ style={{width:18,height:18,borderRadius:"50%",background:c,border:editNote.color
 <div style={cardStyle}>
 <div style={{fontSize:13,fontWeight:600,marginBottom:12}}>סיכום תקציב</div>
 <div style={{fontSize:11,color:"#94a3b8",marginBottom:10}}>מחזור: {cycleLabel} ({Math.round(daysLeft)} ימים נותרו)</div>
-{[{l:"הכנסה חודשית",v:totalMonthlyIncome,c:theme.incomeColor},{l:"הוצאות קבועות",v:totalFixed,c:"#e8b87c"},{l:"הוצאות משתנות",v:totalVariableBudget,c:theme.acc},{l:"מעקב (מזון/בלת\"מ)",v:totalVariableBudgetIncl-totalVariableBudget,c:"#a0b4c8"},{l:"נשאר לא מתוקצב",v:totalMonthlyIncome-totalBudgetIncl,c:(totalMonthlyIncome-totalBudgetIncl)>=0?theme.incomeCo<div style={{marginTop:20,borderTop:"1px solid #f1f5f9",paddingTop:16}}>
-          <div style={{fontSize:13,fontWeight:700,marginBottom:4,color:theme.acc}}>מפתח Gemini API</div>
-          <div style={{fontSize:11,color:"#a3b8cc",marginBottom:10}}>נדרש לזיהוי הוצאות מתמונה אוטומטית</div>
-          <div style={{display:"flex",gap:8}}>
-            <input type="password" value={geminiApiKey} onChange={e=>setGeminiApiKey(e.target.value)} placeholder="הדבק מפתח API" style={{flex:1,border:"1px solid #dde4ed",borderRadius:8,padding:"8px 12px",fontSize:13,outline:"none",boxSizing:"border-box"}} />
-            <button onClick={()=>{localStorage.setItem("gemini_api_key",geminiApiKey);showToast("מפתח נשמר ✓","#6a9bc3");}} style={{background:theme.btn,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,cursor:"pointer",flexShrink:0}}>שמור</button>
-          </div>
-        </div>
-        lor:"#e07070"}].map(x=>(
+{[{l:"הכנסה חודשית",v:totalMonthlyIncome,c:theme.incomeColor},{l:"הוצאות קבועות",v:totalFixed,c:"#e8b87c"},{l:"הוצאות משתנות",v:totalVariableBudget,c:theme.acc},{l:"מעקב (מזון/בלת\"מ)",v:totalVariableBudgetIncl-totalVariableBudget,c:"#a0b4c8"},{l:"נשאר לא מתוקצב",v:totalMonthlyIncome-totalBudgetIncl,c:(totalMonthlyIncome-totalBudgetIncl)>=0?theme.incomeColor:"#e07070"}].map(x=>(
 <div key={x.l} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #f1f5f9"}}>
 <span style={{fontSize:13,color:"#6b7a8d"}}>{x.l}</span>
 <span style={{fontSize:13,fontWeight:700,color:x.c}}>₪{Number(x.v||0).toLocaleString("he-IL")}</span>
@@ -1661,6 +1653,14 @@ style={{background:`linear-gradient(135deg,${t.a},${t.b})`,border:(data.theme||"
 </div>
 </div>
 <button onClick={()=>{ save({...data, monthlyIncome:null, incomes:[]}); showToast("הכנסות אופסו ✓", "#6bbf8e"); }} style={{width:"100%",background:"#fdf6e8",color:theme.fixedText,border:`1.5px solid ${theme.fixedBg}`,borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:8}}>🔄 איפוס הכנסות בלבד</button>
+<div style={{marginTop:20,borderTop:"1px solid #f1f5f9",paddingTop:16}}>
+<div style={{fontSize:13,fontWeight:700,marginBottom:4,color:theme.acc}}>מפתח Gemini API</div>
+<div style={{fontSize:11,color:"#a3b8cc",marginBottom:10}}>נדרש לזיהוי הוצאות מתמונה אוטומטית</div>
+<div style={{display:"flex",gap:8}}>
+<input type="password" value={geminiApiKey} onChange={e=>setGeminiApiKey(e.target.value)} placeholder="הדבק מפתח API" style={{flex:1,border:"1px solid #dde4ed",borderRadius:8,padding:"8px 12px",fontSize:13,outline:"none",boxSizing:"border-box"}} />
+<button onClick={()=>{localStorage.setItem("gemini_api_key",geminiApiKey);showToast("מפתח נשמר","#6a9bc3");}} style={{background:theme.btn,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,cursor:"pointer",flexShrink:0}}>שמור</button>
+</div>
+</div>
 <button onClick={()=>{setResetPin("");setResetError(false);setResetDialog(true);}} style={{width:"100%",background:"#fdf0f0",color:"#e07070",border:"1.5px solid #f5c6c6",borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:"pointer"}}>🗑️ איפוס כל הנתונים</button>
 </>
 )}
