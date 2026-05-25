@@ -317,6 +317,10 @@ const spent = data.expenses.filter(e => e.bucketId===b.id && inCurrentCycle(e.da
 return total + Math.max(0, spent - getMonthlyAmount(b));
 }, 0);
 const totalVariableOnBudget = data.variableBuckets.filter(b=>!b.trackingOnly).reduce((s,b)=>s+Number(b.amount||0),0);
+    const trackingOverflowThisMonth = data.variableBuckets.filter(b => b.trackingOnly).reduce((total, b) => {
+          const spent = data.expenses.filter(e => e.bucketId === b.id && inCurrentCycle(e.date)).reduce((s,e) => s + Number(e.amount||0), 0);
+          return total + Math.max(0, spent - b.amount);
+    }, 0);
 
 // ── Automatic dynamic weekly budget ──────────────────────────────────────
 // Budget this week = (monthly variable budget - already spent in past completed weeks - fixed overflow) / weeks remaining
@@ -331,7 +335,7 @@ const spentInPastCycleWeeks = pastCycleWeekIds.reduce((total, wid) => {
 return total + data.expenses.filter(e => getWeekId(e.date)===wid && inCurrentCycle(e.date) && variableBucketIds.has(e.bucketId) && !trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
 }, 0);
 const weeksRemainingInCycle = allCycleWeekIds.filter(w => w >= currentWeekId).length;
-const dynamicWeeklyBudget = Math.max(0, (totalVariableOnBudget - spentInPastCycleWeeks - fixedOverflowThisMonth) / Math.max(1, weeksRemainingInCycle));
+const dynamicWeeklyBudget = Math.max(0, (totalVariableOnBudget - spentInPastCycleWeeks - fixedOverflowThisMonth - trackingOverflowThisMonth) / Math.max(1, weeksRemainingInCycle));
 const weeklyFixedOverflowPenalty = fixedOverflowThisMonth / Math.max(1, weeksRemainingInCycle);
 // For a selected past week: proportional share based on days in cycle
 const getWeekBudget = (weekId) => {
