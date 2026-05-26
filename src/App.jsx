@@ -805,7 +805,7 @@ style={{ background:"rgba(255,255,255,.25)", border:"none", color:"#fff", border
 {/* Nav */}
 <div style={{ background:"#fff", borderBottom:"1px solid #e8eef5", display:"flex", justifyContent:"space-around", padding:"10px 0" }}>
 {[["dashboard","📊","סיכום"],["variable","🔄","משתנות"],["fixed","📌","קבועות"],["savings","🐷","חסכון"],["analytics","📈","ניתוח"],["notes","📝","רשומות"],["settings","⚙️","הגדרות"]].map(([id,icon,label])=>(
-<button key={id} onClick={()=>setView(id)} style={{ background:"none", border:"none", display:"flex", flexDirection:"column", alignItems:"center", gap:2, cursor:"pointer", color:view===id?theme.acc:"#a0aec0", fontSize:10, fontWeight:view===id?700:400, padding:"4px 8px" }}>
+<button key={id} onClick={()=>setView(id)} style={{ background:"none", border:"none", display:"flex", flexDirection:"column", alignItems:"center", gap:2, cursor:"pointer", color:view===id?theme.acc:"#64748b", fontSize:10, fontWeight:view===id?700:400, padding:"4px 8px" }}>
 <span style={{fontSize:18}}>{icon}</span>{label}
 </button>
 ))}
@@ -1339,6 +1339,122 @@ onKeyDown={e=>e.key==="Enter"&&updateSnapshotBalance(item.id,e.target.value)}/>
 הוצא עד כה: ₪{Math.round(spentThisCycle).toLocaleString("he-IL")} | {Math.round(daysElapsed)} ימים מתוך {cycleTotalDays}
 </div>
 </div>
+
+
+{/* ── Smart Budget Recommendations ── */}
+{(()=>{
+  const varRecs = [];
+  data.variableBuckets.forEach(b => {
+    if(b.trackingOnly) return;
+    const spent = data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).reduce((s,e)=>s+Number(e.amount),0);
+    const budget = Number(b.amount);
+    const pct = budget > 0 ? spent/budget : 0;
+    const proj = daysElapsed/cycleTotalDays > 0.1 ? spent/(daysElapsed/cycleTotalDays) : spent*2;
+    if(pct >= 0.85) varRecs.push({type:pct>=1?'danger':'warn', name:b.name, icon:b.icon, budget, spent:Math.round(spent), proj:Math.round(proj), suggested:Math.round(proj*1.15/50)*50, reason:pct>=1?'חרגת ב-₪'+Math.round(spent-budget).toLocaleString('he-IL'):'השתמשת ב-'+Math.round(pct*100)+'% עד כה', action:pct>=1?'הגדל תקציב':'שקול להגדיל'});
+    else if(pct < 0.4 && daysElapsed/cycleTotalDays >= 0.45 && budget >= 300) varRecs.push({type:'good', name:b.name, icon:b.icon, budget, spent:Math.round(spent), proj:Math.round(proj), suggested:Math.max(Math.round(proj*1.25/50)*50,100), reason:'רק '+Math.round(pct*100)+'% מנוצל ב-'+Math.round(daysElapsed/cycleTotalDays*100)+'% מהתקופה', action:'שקול להקטין'});
+  });
+  if(varRecs.length === 0) return null;
+  return (
+    <div style={{...cardStyle, marginBottom:16, border:'1.5px solid #c8e4f7'}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
+        <span style={{fontSize:13, fontWeight:700}}>💡 המלצות תקציב</span>
+        <span style={{fontSize:11, color:'#555', background:theme.light, padding:'3px 8px', borderRadius:6}}>{varRecs.length} המלצות</span>
+      </div>
+      {varRecs.map((r,i)=>{
+        const bg=r.type==='danger'?'#fdf0f0':r.type==='warn'?'#fdf8ec':'#f0faf5';
+        const bdr=r.type==='danger'?'#f5c6c6':r.type==='warn'?'#f0dfa8':'#b7e4c7';
+        const tc=r.type==='danger'?'#b03030':r.type==='warn'?'#7a4a00':'#1a7a42';
+        const abg=r.type==='danger'?'#b03030':r.type==='warn'?'#7a4a00':'#1a7a42';
+        const arr=r.type==='good'?'↓':'↑';
+        return (
+          <div key={i} style={{background:bg, border:'1px solid '+bdr, borderRadius:10, padding:'10px 12px', marginBottom:8}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4}}>
+              <span style={{fontSize:14, fontWeight:600, color:'#1a3a5c'}}>{ICONS[r.icon]} {r.name}</span>
+              <span style={{background:abg, color:'#fff', borderRadius:6, padding:'2px 8px', fontSize:11, fontWeight:600}}>{r.action}</span>
+            </div>
+            <div style={{fontSize:12, color:'#333', marginBottom:3}}>{r.reason}</div>
+            <div style={{fontSize:12, color:tc, fontWeight:600}}>{arr} ₪{r.budget.toLocaleString('he-IL')} → ₪{r.suggested.toLocaleString('he-IL')}</div>
+            <div style={{fontSize:10, color:'#555', marginTop:2}}>בפועל: ₪{r.spent.toLocaleString('he-IL')} | צפי: ₪{r.proj.toLocaleString('he-IL')}</div>
+          </div>
+        );
+      })}
+      <div style={{fontSize:11, color:'#666', marginTop:6, borderTop:'1px solid #eaf4fc', paddingTop:8, textAlign:'center'}}>✏️ לשינוי תקציב — לחץ "משתנות" ← "ערוך"</div>
+    </div>
+  );
+})()}
+
+{/* ── Weekly Variable Spending Chart ── */}
+{(()=>{
+  // Billing cycle weekly breakdown — variable expenses only
+  const weeks = [];
+  let cur = new Date(cycleStart);
+  while(cur <= cycleEnd) {
+    const wStart = new Date(cur);
+    const wEnd = new Date(cur); wEnd.setDate(wEnd.getDate() + 6);
+    const wEndCapped = wEnd > cycleEnd ? new Date(cycleEnd) : wEnd;
+    const wId = wStart.toISOString().slice(0,10);
+    const wSpend = data.expenses.filter(e => {
+      const d = new Date(e.date); d.setHours(0,0,0,0);
+      return d >= wStart && d <= wEndCapped && variableBucketIds.has(e.bucketId);
+    }).reduce((s,e) => s+Number(e.amount),0);
+    const isPast = wEndCapped < today;
+    const isCurrent = !isPast && wStart <= today;
+    if(isPast || isCurrent) weeks.push({wId, wStart, wEndCapped, wSpend, isCurrent});
+    cur.setDate(cur.getDate() + 7);
+  }
+  if(weeks.length === 0) return null;
+  const maxSpend = Math.max(...weeks.map(w=>w.wSpend), 1);
+  const fmtWk = (d) => d.getDate()+'/'+(d.getMonth()+1);
+  return (
+    <div style={{...cardStyle, marginBottom:16, border:'1.5px solid #c8e4f7'}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14}}>
+        <span style={{fontSize:13, fontWeight:700}}>📊 ניתוח הוצאות</span>
+        <span style={{fontSize:11, color:'#444', background:theme.light, padding:'3px 8px', borderRadius:6}}>{fmtWk(cycleStart)} – {fmtWk(cycleEnd)}</span>
+      </div>
+      <div style={{marginBottom:16}}>
+        <div style={{fontSize:11, color:'#333', fontWeight:600, marginBottom:8}}>הוצאות משתנות שבועיות (₪)</div>
+        <div style={{display:'flex', gap:4, alignItems:'flex-end', height:110, borderBottom:'1px solid #eaf4fc', paddingBottom:2, direction:'ltr'}}>
+          {[...weeks].reverse().map((w,i)=>{
+            const h = Math.max(Math.round((w.wSpend/maxSpend)*100),3);
+            return (
+              <div key={w.wId} style={{display:'flex', flexDirection:'column', alignItems:'center', flex:1, gap:2}}>
+                <div style={{fontSize:10, color:w.isCurrent?'#1a6a9c':'#4a9cd4', fontWeight:w.isCurrent?700:400, textAlign:'center'}}>
+                  {w.wSpend>0?'₪'+Math.round(w.wSpend).toLocaleString('he-IL'):''}
+                </div>
+                <div style={{width:'100%', height:80, display:'flex', alignItems:'flex-end', justifyContent:'center'}}>
+                  <div style={{width:'70%', background:w.isCurrent?theme.btn:'#a8d2ee', borderRadius:'4px 4px 0 0', height:h+'%'}}/>
+                </div>
+                <div style={{fontSize:9, color:'#444', textAlign:'center'}}>{fmtWk(w.wStart)}-{fmtWk(w.wEndCapped)}</div>
+                <div style={{fontSize:9, color:'#777'}}>{w.isCurrent?'◀ עכשיו':''}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div>
+        <div style={{fontSize:11, color:'#333', fontWeight:600, marginBottom:10}}>תקציב vs בפועל — משתנות</div>
+        {[...data.variableBuckets].map(b=>({...b, spent:data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).reduce((s,e)=>s+Number(e.amount),0)})).sort((a,b2)=>(b2.spent/b2.amount)-(a.spent/a.amount)).slice(0,7).map(b=>{
+          const p = Math.min((b.spent/b.amount)*100, 100);
+          const over = b.spent > b.amount;
+          const clr = over?'#e07070':p>75?'#e8b87c':'#6bbf8e';
+          const txt = over?'#b03030':'#1a6a4f';
+          const track = b.trackingOnly?<span style={{fontSize:9,color:'#777',background:'#f5f5f5',padding:'1px 4px',borderRadius:3,marginRight:4}}>מעקב</span>:null;
+          return (
+            <div key={b.id} style={{marginBottom:9}}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3}}>
+                <div style={{fontSize:11, color:'#1a3a5c', fontWeight:500}}>{ICONS[b.icon]} {b.name}{track}</div>
+                <div style={{fontSize:11, color:txt, fontWeight:600}}>₪{Math.round(b.spent).toLocaleString('he-IL')} / ₪{b.amount.toLocaleString('he-IL')}</div>
+              </div>
+              <div style={{background:'#eaf4fc', borderRadius:4, height:7}}>
+                <div style={{width:p+'%', background:clr, height:'100%', borderRadius:4}}/>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+})()}
 
 {/* Category breakdown — with remaining budget per category */}
 <div style={{...cardStyle,marginBottom:16}}>
