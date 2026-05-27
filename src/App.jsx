@@ -851,8 +851,41 @@ const clamp=Math.min(1,Math.max(0,fillPct));
 const fillableH=botY-topY; const liquidY=botY-clamp*fillableH;
 const gradId="tg-"+label; const clipId="tc-"+label; const shimId="ts-"+label;
 const ticks=[0.25,0.5,0.75];
+const waveAmp=6;
+const bubblePositions=[{cx:tx+tw*0.28,delay:0,dur:2.4},{cx:tx+tw*0.55,delay:1.0,dur:3.1},{cx:tx+tw*0.75,delay:0.5,dur:1.9}];
 return (
 <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
+<style>{`
+@keyframes wave-${label} {
+  0%,100% { transform: translateX(0px); }
+  50%      { transform: translateX(-${TW*0.6}px); }
+}
+@keyframes fillRise-${label} {
+  from { transform: translateY(${fillableH}px); opacity:0.3; }
+  to   { transform: translateY(0px); opacity:1; }
+}
+@keyframes bubbleUp-${label}-0 {
+  0%   { transform: translateY(0px); opacity:0.7; }
+  80%  { opacity:0.3; }
+  100% { transform: translateY(-${clamp*fillableH*0.8}px); opacity:0; }
+}
+@keyframes bubbleUp-${label}-1 {
+  0%   { transform: translateY(0px); opacity:0.6; }
+  80%  { opacity:0.25; }
+  100% { transform: translateY(-${clamp*fillableH*0.75}px); opacity:0; }
+}
+@keyframes bubbleUp-${label}-2 {
+  0%   { transform: translateY(0px); opacity:0.5; }
+  80%  { opacity:0.2; }
+  100% { transform: translateY(-${clamp*fillableH*0.7}px); opacity:0; }
+}
+.fillGroup-${label} {
+  animation: fillRise-${label} 1.3s cubic-bezier(0.22,1,0.36,1) both;
+}
+.waveRect-${label} {
+  animation: wave-${label} 3s ease-in-out infinite;
+}
+`}</style>
 <div style={{fontSize:12,fontWeight:700,color:"#334155",letterSpacing:"-0.3px",textAlign:"center"}}>{title}</div>
 <svg width={TW+24} height={TH} viewBox={`-12 0 ${TW+24} ${TH}`} style={{overflow:"visible"}}>
 <defs>
@@ -862,8 +895,21 @@ return (
 </defs>
 {ticks.map(t=>{const ty2=botY-t*fillableH;return(<g key={t}><line x1={tx+tw} y1={ty2} x2={tx+tw+8} y2={ty2} stroke="#c8d4e0" strokeWidth="1.2"/><text x={tx+tw+11} y={ty2+4} fontSize="8" fill="#94a3b8" fontWeight="600">{Math.round(t*100)}%</text></g>);})}
 <path d={tubePath} fill="rgba(248,250,252,0.95)" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5"/>
-{clamp>0&&<rect x={tx} y={liquidY} width={tw} height={TH} fill={`url(#${gradId})`} clipPath={`url(#${clipId})`}/>}
-{clamp>0.02&&<path d={`M ${tx+1} ${liquidY} Q ${tx+tw*0.3} ${liquidY-3} ${tx+tw*0.5} ${liquidY} Q ${tx+tw*0.7} ${liquidY+3} ${tx+tw-1} ${liquidY}`} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" clipPath={`url(#${clipId})`}/>}
+{clamp>0&&(
+<g className={`fillGroup-${label}`} clipPath={`url(#${clipId})`}>
+<rect x={tx} y={liquidY+waveAmp} width={tw} height={botY-liquidY} fill={`url(#${gradId})`}/>
+<svg x={tx} y={liquidY-waveAmp} width={tw*2} height={waveAmp*3} style={{overflow:"hidden"}}>
+<rect className={`waveRect-${label}`} x="0" y="0" width={tw*2} height={waveAmp*3}
+fill={`url(#${gradId})`}
+style={{clipPath:`path("M 0 ${waveAmp} Q ${tw*0.25} 0 ${tw*0.5} ${waveAmp} Q ${tw*0.75} ${waveAmp*2} ${tw} ${waveAmp} Q ${tw*1.25} 0 ${tw*1.5} ${waveAmp} Q ${tw*1.75} ${waveAmp*2} ${tw*2} ${waveAmp} L ${tw*2} ${waveAmp*3} L 0 ${waveAmp*3} Z")`}}
+/>
+</svg>
+{clamp>0.1&&bubblePositions.map((b,i)=>(
+<circle key={i} cx={b.cx} cy={botY-8} r={2+i*0.5} fill="rgba(255,255,255,0.5)"
+style={{animation:`bubbleUp-${label}-${i} ${b.dur}s ease-in ${b.delay}s infinite`}}/>
+))}
+</g>
+)}
 <rect x={tx+3} y={topY} width={7} height={(botY-topY)*0.7} rx={3} fill={`url(#${shimId})`} clipPath={`url(#${clipId})`}/>
 <path d={tubePath} fill="none" stroke="rgba(100,116,139,0.4)" strokeWidth="1.5"/>
 <rect x={tx-3} y={topY-8} width={tw+6} height={9} rx={3} fill="#e8eef5" stroke="rgba(148,163,184,0.5)" strokeWidth="1"/>
