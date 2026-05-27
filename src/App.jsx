@@ -913,7 +913,7 @@ style={{animation:`bubbleUp-${label}-${i} ${b.dur}s ease-in ${b.delay}s infinite
 <rect x={tx+3} y={topY} width={7} height={(botY-topY)*0.7} rx={3} fill={`url(#${shimId})`} clipPath={`url(#${clipId})`}/>
 <path d={tubePath} fill="none" stroke="rgba(100,116,139,0.4)" strokeWidth="1.5"/>
 <rect x={tx-3} y={topY-8} width={tw+6} height={9} rx={3} fill="#e8eef5" stroke="rgba(148,163,184,0.5)" strokeWidth="1"/>
-<text x={tx+tw/2} y={topY+(botY-topY)*0.55} textAnchor="middle" fontSize="15" fontWeight="900" fill={clamp>0.4?"rgba(255,255,255,0.95)":"#64748b"} style={{fontFamily:"system-ui,sans-serif"}}>{Math.round(fillPct*100)}%</text>
+<text x={tx+tw/2} y={topY+(botY-topY)*0.55} textAnchor="middle" fontSize="15" fontWeight="900" fill={clamp>0.15?"rgba(255,255,255,0.95)":"#1e293b"} style={{fontFamily:"system-ui,sans-serif"}}>{Math.round(fillPct*100)}%</text>
 </svg>
 {showDots&&<div style={{display:"flex",gap:5}}>{DAY_LABELS.map((d,i)=>(<div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><div style={{width:9,height:9,borderRadius:"50%",background:i<daysPassed?gradB:"#dde4ed",boxShadow:i===dayOfWeek?`0 0 0 2px #fff, 0 0 0 3.5px ${gradB}`:"none",transition:"all .2s"}}/><span style={{fontSize:8,color:i===dayOfWeek?gradB:"#94a3b8",fontWeight:i===dayOfWeek?800:400}}>{d}</span></div>))}</div>}
 <div style={{textAlign:"center"}}>
