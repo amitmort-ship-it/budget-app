@@ -931,7 +931,7 @@ return (
 <span style={{fontSize:11,fontWeight:700,color:statusMsg.color,background:statusMsg.bg,padding:"3px 10px",borderRadius:20}}>{statusMsg.text}</span>
 </div>
 <div style={{display:"flex",justifyContent:"space-around",alignItems:"flex-start"}}>
-<Tube label="days" fillPct={weekFillPct} gradA="#c4b5e8" gradB="#8b6fc7" title="ימים שעברו" sub={`${daysPassed} / 7`} showDots/>
+<Tube label="days" fillPct={weekFillPct} gradA="#c4b5e8" gradB="#8b6fc7" title="ימים שנותרו" sub={`${daysPassed} / 7`} showDots/>
 <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",paddingTop:90,gap:4,opacity:.25}}>
 <div style={{width:1,height:36,background:"#94a3b8"}}/><span style={{fontSize:9,fontWeight:800,color:"#94a3b8",letterSpacing:1}}>VS</span><div style={{width:1,height:36,background:"#94a3b8"}}/>
 </div>
