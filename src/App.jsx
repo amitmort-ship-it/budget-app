@@ -1489,7 +1489,10 @@ onKeyDown={e=>e.key==="Enter"&&updateSnapshotBalance(item.id,e.target.value)}/>
             <div key={b.id} style={{marginBottom:9}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3}}>
                 <div style={{fontSize:11, color:'#1a3a5c', fontWeight:500}}>{ICONS[b.icon]} {b.name}{track}</div>
-                <div style={{fontSize:11, color:txt, fontWeight:600}}>₪{Math.round(b.spent).toLocaleString('he-IL')} / ₪{b.amount.toLocaleString('he-IL')}</div>
+                <div style={{fontSize:11, color:txt, fontWeight:600, display:'flex', alignItems:'baseline', gap:4}}>
+                  <span>₪{Math.round(b.spent).toLocaleString('he-IL')} / ₪{b.amount.toLocaleString('he-IL')}</span>
+                  <span style={{fontSize:10, color:over?'#A04848':p>75?'#9A7840':'#5a8a7a', fontWeight:500, opacity:0.85}}>({Math.round(p)}%)</span>
+                </div>
               </div>
               <div style={{background:'#eaf4fc', borderRadius:4, height:7}}>
                 <div style={{width:p+'%', background:clr, height:'100%', borderRadius:4}}/>
