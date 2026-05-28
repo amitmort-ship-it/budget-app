@@ -839,7 +839,7 @@ style={{ background:"rgba(255,255,255,.25)", border:"none", color:"#fff", border
 {(()=>{
 const todayD=new Date(); todayD.setHours(0,0,0,0);
 const dayOfWeek=todayD.getDay(); const daysPassed=dayOfWeek+1;
-const weekFillPct=daysPassed/7;
+const weekFillPct=(7-daysPassed)/7;
 const budgetFillPct=weeklyVariableBudget>0?Math.max(0,leftThisWeek/weeklyVariableBudget):0;
 const budgetOver=leftThisWeek<0;
 const DAY_LABELS=["א","ב","ג","ד","ה","ו","ש"];
