@@ -747,9 +747,9 @@ onClick={e=>{ if(showWeekPicker && !e.target.closest('[data-weekpicker]')) setSh
 {/* Header */}
 <div style={{ background:`linear-gradient(135deg,${theme.a} 0%,${theme.b} 100%)`, padding:"28px 20px 20px", color:"#fff" }}>
 <div style={{ fontSize:12, opacity:.8, marginBottom:4, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-<span>ניהול הוצאות בית</span>
+<span>הכספת המשפחתית</span>
 <span style={{ fontSize:10, opacity:.8 }}>
-{syncing ? "⟳ מסנכרן..." : lastSync ? `✓ ${lastSync.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})}` : ""}
+{syncing ? "⟳ מסנכרן..." : lastSync ? `סונכרן ${lastSync.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})}` : ""}
 </span>
 </div>
 <div style={{ fontSize:28, fontWeight:800 }}>
@@ -931,7 +931,7 @@ return (
 <span style={{fontSize:11,fontWeight:700,color:statusMsg.color,background:statusMsg.bg,padding:"3px 10px",borderRadius:20}}>{statusMsg.text}</span>
 </div>
 <div style={{display:"flex",justifyContent:"space-around",alignItems:"flex-start"}}>
-<Tube label="days" fillPct={weekFillPct} gradA="#c4b5e8" gradB="#8b6fc7" title="ימים שנותרו" sub={`${daysPassed} / 7`} showDots/>
+<Tube label="days" fillPct={weekFillPct} gradA="#c4b5e8" gradB="#8b6fc7" title="ימים שנותרו" sub={`נותרו ${7-daysPassed} ימים`} showDots/>
 <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",paddingTop:90,gap:4,opacity:.25}}>
 <div style={{width:1,height:36,background:"#94a3b8"}}/><span style={{fontSize:9,fontWeight:800,color:"#94a3b8",letterSpacing:1}}>VS</span><div style={{width:1,height:36,background:"#94a3b8"}}/>
 </div>
@@ -961,7 +961,7 @@ return(
 <div style={{marginBottom:16}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
 <span style={{fontSize:13,fontWeight:700,color:"#334155"}}>הוצאות יומיות — החודש</span>
-<span style={{fontSize:11,color:"#94a3b8"}}>ממוצע ₪{Math.round(avgSpend).toLocaleString("he-IL")}/יום</span>
+<span style={{fontSize:11,color:"#94a3b8"}}>ממוצע ₪{Math.round(avgSpend).toLocaleString("he-IL")}/יום</span><div style={{display:"flex",gap:10,alignItems:"center"}}><span style={{display:"flex",alignItems:"center",gap:3,fontSize:10,color:"#94a3b8"}}><span style={{width:8,height:8,borderRadius:2,background:"#e07070",display:"inline-block"}}/>מעל תקציב</span><span style={{display:"flex",alignItems:"center",gap:3,fontSize:10,color:"#94a3b8"}}><span style={{width:8,height:8,borderRadius:2,background:"#f0b87a",display:"inline-block"}}/>רגיל</span><span style={{display:"flex",alignItems:"center",gap:3,fontSize:10,color:"#94a3b8"}}><span style={{width:8,height:8,borderRadius:2,background:"#7ec8a0",display:"inline-block"}}/>מתחת תקציב</span></div>
 </div>
 <div style={{background:"#fff",borderRadius:14,padding:"14px 12px 10px",boxShadow:"0 1px 6px rgba(0,0,0,.06)",overflowX:"auto"}}>
 <div style={{display:"flex",alignItems:"flex-end",gap:3,minWidth:Math.max(320,days.length*18),height:80,position:"relative"}}>
@@ -989,7 +989,7 @@ boxShadow:day.daySpend>0?"0 1px 4px rgba(0,0,0,.1)":"none"}}/>
 <div style={{display:"flex",justifyContent:"space-between",marginTop:4,fontSize:10,color:"#94a3b8"}}>
 <span>10/{new Date(cycleStart).getMonth()+1}</span>
 <span>— תקציב יומי ₪{Math.round(dailyBudget).toLocaleString("he-IL")}</span>
-<span>9/{new Date(cycleEnd).getMonth()+1}</span>
+<span>10/{new Date(cycleStart).getMonth()+1}</span>
 </div>
 </div>
 </div>
