@@ -72,37 +72,37 @@ savingsSnapshot: [],
 // ── PASTEL THEMES ──────────────────────────────────────────────────────────
 const THEMES = {
 pastel: {
-name:"פסטל 🌸", a:"#b5c9e8", b:"#8fb3d9",
-acc:"#6a9bc3", light:"#eef4fb", navActive:"#6a9bc3",
-btn:"#6a9bc3", btnLight:"#daeaf7",
-savingsA:"#a8d5ba", savingsB:"#6bbf8e",
-fixedBg:"#fef4e4", fixedText:"#b07d3a", fixedSub:"#c8934a",
-varBg:"#eef4fb", varText:"#4a7fa5", varSub:"#6a9bc3",
-incomeColor:"#6bbf8e", expColor:"#e8b87c", surplusColor:"#6a9bc3",
-exportGradA:"#7ab89a", exportGradB:"#5aa67d", exportAccent:"#5aa67d",
-incomeAcc:"#6bbf8e",
+name:"פסטל 🌸", a:"#A8C5D8", b:"#7BA7BC",
+acc:"#7BA7BC", light:"#EEF4F8", navActive:"#7BA7BC",
+btn:"#7BA7BC", btnLight:"#D6E8F2",
+savingsA:"#A8CABC", savingsB:"#82B89A",
+fixedBg:"#F7F3EE", fixedText:"#9A7A55", fixedSub:"#B8956A",
+varBg:"#EEF4F8", varText:"#5A8AA0", varSub:"#7BA7BC",
+incomeColor:"#82B89A", expColor:"#C9A96E", surplusColor:"#7BA7BC",
+exportGradA:"#82B89A", exportGradB:"#5FA085", exportAccent:"#5FA085",
+incomeAcc:"#82B89A",
 },
 lavender: {
-name:"לבנדר 💜", a:"#c4b5e8", b:"#a08dd4",
-acc:"#8b6fc7", light:"#f3f0fb", navActive:"#8b6fc7",
-btn:"#8b6fc7", btnLight:"#e5ddf7",
-savingsA:"#b5c9e8", savingsB:"#6a9bc3",
-fixedBg:"#fef4fb", fixedText:"#8b4d9e", fixedSub:"#a05aab",
-varBg:"#f3f0fb", varText:"#5e3f99", varSub:"#8b6fc7",
-incomeColor:"#8b6fc7", expColor:"#e8b87c", surplusColor:"#7a5ec0",
-exportGradA:"#7a5ec0", exportGradB:"#a08dd4", exportAccent:"#8b6fc7",
-incomeAcc:"#8b6fc7",
+name:"לבנדר 💜", a:"#C5B8E0", b:"#A090CC",
+acc:"#8B78C0", light:"#F2EEFA", navActive:"#8B78C0",
+btn:"#8B78C0", btnLight:"#E2D8F5",
+savingsA:"#A8CABC", savingsB:"#82B89A",
+fixedBg:"#F5F0F8", fixedText:"#7A5598", fixedSub:"#9872B0",
+varBg:"#F2EEFA", varText:"#5A3A88", varSub:"#8B78C0",
+incomeColor:"#82B89A", expColor:"#C9A96E", surplusColor:"#7A65B5",
+exportGradA:"#7A65B5", exportGradB:"#A090CC", exportAccent:"#8B78C0",
+incomeAcc:"#82B89A",
 },
 mint: {
-name:"מנטה 🌿", a:"#a8d5ba", b:"#6bbf8e",
-acc:"#4aab72", light:"#edf7f1", navActive:"#4aab72",
-btn:"#4aab72", btnLight:"#c8eeda",
-savingsA:"#6bbf8e", savingsB:"#3d9960",
-fixedBg:"#fef9e4", fixedText:"#8a7a20", fixedSub:"#a09030",
-varBg:"#edf7f1", varText:"#2d7a50", varSub:"#4aab72",
-incomeColor:"#4aab72", expColor:"#e8b87c", surplusColor:"#3d9960",
-exportGradA:"#3d9960", exportGradB:"#6bbf8e", exportAccent:"#4aab72",
-incomeAcc:"#4aab72",
+name:"מנטה 🌿", a:"#A8CABC", b:"#82B89A",
+acc:"#5FA085", light:"#EDF6F2", navActive:"#5FA085",
+btn:"#5FA085", btnLight:"#C5E0D5",
+savingsA:"#82B89A", savingsB:"#4A8870",
+fixedBg:"#F7F4EE", fixedText:"#7A6A35", fixedSub:"#9A8845",
+varBg:"#EDF6F2", varText:"#2D6A50", varSub:"#5FA085",
+incomeColor:"#5FA085", expColor:"#C9A96E", surplusColor:"#4A8870",
+exportGradA:"#4A8870", exportGradB:"#82B89A", exportAccent:"#5FA085",
+incomeAcc:"#5FA085",
 },
 peach: {
 name:"אפרסק 🍑", a:"#f0c4a8", b:"#e89c72",
@@ -734,12 +734,12 @@ style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.
 
 const pct = (val,max) => Math.min(100, max>0?(val/max)*100:0);
 const weekPct = pct(spentThisWeek, weeklyVariableBudget);
-const barColor = weekPct>90?"#e07070":weekPct>70?"#e8b87c":"#6bbf8e";
+const barColor = weekPct>90?"#D07878":weekPct>70?"#C9A96E":"#82B89A";
 const hasFixedOverflow = fixedOverflowThisMonth > 0;
 const inputStyle = { border:"1.5px solid #dde4ed", borderRadius:10, padding:"10px 12px", fontSize:13, outline:"none", background:"#fff" };
 const cardStyle = { background:"#fff", borderRadius:14, padding:"14px 16px", marginBottom:10, boxShadow:"0 1px 6px rgba(0,0,0,.06)" };
 return (
-<div style={{ fontFamily:"'Segoe UI',sans-serif", direction:"rtl", background:"#f4f7fb", minHeight:"100vh", maxWidth:480, margin:"0 auto", paddingBottom:90 }}
+<div style={{ fontFamily:"'Segoe UI',sans-serif", direction:"rtl", background:"#F5F6F8", minHeight:"100vh", maxWidth:480, margin:"0 auto", paddingBottom:90 }}
 onClick={e=>{ if(showWeekPicker && !e.target.closest('[data-weekpicker]')) setShowWeekPicker(false); }}>
 
 {toast && <div style={{ position:"fixed", top:20, left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"10px 22px", borderRadius:50, fontWeight:700, zIndex:999, boxShadow:"0 4px 20px rgba(0,0,0,.15)", fontSize:14 }}>{toast.msg}</div>}
@@ -816,7 +816,7 @@ style={{ background:"rgba(255,255,255,.25)", border:"none", color:"#fff", border
 {view==="dashboard" && (
 <>
 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:16 }}>
-{[{label:"הכנסה",val:totalMonthlyIncome,color:theme.incomeColor,bg:theme.light},{label:"תקציב",val:totalBudgetIncl,color:"#e8b87c",bg:"#fdf6e8"},{label:"עודף",val:totalMonthlyIncome-totalBudgetIncl,color:(totalMonthlyIncome-totalBudgetIncl)>=0?theme.acc:"#e07070",bg:(totalMonthlyIncome-totalBudgetIncl)>=0?theme.light:"#fdf0f0"}].map(c=>(
+{[{label:"הכנסה",val:totalMonthlyIncome,color:theme.incomeColor,bg:theme.light},{label:"תקציב",val:totalBudgetIncl,color:"#e8b87c",bg:"#fdf6e8"},{label:"עודף",val:totalMonthlyIncome-totalBudgetIncl,color:(totalMonthlyIncome-totalBudgetIncl)>=0?theme.acc:"#D07878",bg:(totalMonthlyIncome-totalBudgetIncl)>=0?theme.light:"#FAF0F0"}].map(c=>(
 <div key={c.label} style={{ background:c.bg, borderRadius:14, padding:"12px 10px", textAlign:"center" }}>
 <div style={{fontSize:11,color:"#6b7a8d",marginBottom:4}}>{c.label}</div>
 <div style={{fontSize:15,fontWeight:800,color:c.color}}>₪{Math.abs(c.val).toLocaleString("he-IL",{maximumFractionDigits:0})}</div>
@@ -828,8 +828,8 @@ style={{ background:"rgba(255,255,255,.25)", border:"none", color:"#fff", border
 {alerts.length>0&&(
 <div style={{marginBottom:12}}>
 {alerts.map((a,i)=>(
-<div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",borderRadius:10,marginBottom:6,background:a.type==="danger"?"#fdf0f0":a.type==="warn"?"#fdf8ec":"#edf7f1",border:`1px solid ${a.type==="danger"?"#f5c6c6":a.type==="warn"?"#f0dfa8":"#b8e8cc"}`}}>
-<span style={{fontSize:12,color:a.type==="danger"?"#c05050":a.type==="warn"?"#b07020":"#4aab72",fontWeight:600,lineHeight:1.4}}>{a.msg}</span>
+<div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",borderRadius:10,marginBottom:6,background:a.type==="danger"?"#FAF0F0":a.type==="warn"?"#fdf8ec":"#edf7f1",border:`1px solid ${a.type==="danger"?"#f5c6c6":a.type==="warn"?"#f0dfa8":"#b8e8cc"}`}}>
+<span style={{fontSize:12,color:a.type==="danger"?"#B05858":a.type==="warn"?"#9A7840":"#5FA085",fontWeight:600,lineHeight:1.4}}>{a.msg}</span>
 </div>
 ))}
 </div>
@@ -923,7 +923,7 @@ style={{animation:`bubbleUp-${label}-${i} ${b.dur}s ease-in ${b.delay}s infinite
 </div>
 );
 };
-const statusMsg=budgetOver?{text:`חרגת ₪${Math.abs(Math.round(leftThisWeek)).toLocaleString("he-IL")}`,color:"#c05050",bg:"#fdf0f0"}:weekFillPct>budgetFillPct+0.15?{text:"הימים רצים מהתקציב",color:"#9a7020",bg:"#fdf8ec"}:{text:"אתה בקצב טוב ✓",color:"#3d7a55",bg:"#edf7f1"};
+const statusMsg=budgetOver?{text:`חרגת ₪${Math.abs(Math.round(leftThisWeek)).toLocaleString("he-IL")}`,color:"#B05858",bg:"#FAF0F0"}:weekFillPct>budgetFillPct+0.15?{text:"הימים רצים מהתקציב",color:"#9a7020",bg:"#fdf8ec"}:{text:"אתה בקצב טוב ✓",color:"#3d7a55",bg:"#edf7f1"};
 return (
 <div style={{...cardStyle,marginBottom:16,background:"#f8fbff",border:"1px solid #e0e8f0"}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
@@ -1091,7 +1091,7 @@ style={{...cardStyle,border:isEditing?`2px solid ${theme.btn}`:"2px solid transp
 </div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
 <button onClick={()=>setEditBucket(null)} style={{background:"#f1f5f9",color:"#64748b",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>ביטול</button>
-<button onClick={()=>deleteBucket("variable",b.id)} style={{background:"#fdf0f0",color:"#e07070",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>מחק</button>
+<button onClick={()=>deleteBucket("variable",b.id)} style={{background:"#FAF0F0",color:"#e07070",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>מחק</button>
 <button onClick={saveBucketEdit} style={{background:theme.btn,color:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:700,cursor:"pointer"}}>שמור</button>
 </div>
 </>
@@ -1175,7 +1175,7 @@ style={{...cardStyle,border:isEditing?"2px solid "+theme.fixedText:hasOver?"1.5p
 </div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
 <button onClick={()=>setEditBucket(null)} style={{background:"#f1f5f9",color:"#64748b",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>ביטול</button>
-<button onClick={()=>deleteBucket("fixed",b.id)} style={{background:"#fdf0f0",color:"#e07070",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>מחק</button>
+<button onClick={()=>deleteBucket("fixed",b.id)} style={{background:"#FAF0F0",color:"#e07070",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>מחק</button>
 <button onClick={saveBucketEdit} style={{background:theme.fixedText,color:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:700,cursor:"pointer"}}>שמור</button>
 </div>
 </>
@@ -1407,7 +1407,7 @@ onKeyDown={e=>e.key==="Enter"&&updateSnapshotBalance(item.id,e.target.value)}/>
         <span style={{fontSize:11, color:'#555', background:theme.light, padding:'3px 8px', borderRadius:6}}>{varRecs.length} המלצות</span>
       </div>
       {varRecs.map((r,i)=>{
-        const bg=r.type==='danger'?'#fdf0f0':r.type==='warn'?'#fdf8ec':'#f0faf5';
+        const bg=r.type==='danger'?'#FAF0F0':r.type==='warn'?'#fdf8ec':'#f0faf5';
         const bdr=r.type==='danger'?'#f5c6c6':r.type==='warn'?'#f0dfa8':'#b7e4c7';
         const tc=r.type==='danger'?'#b03030':r.type==='warn'?'#7a4a00':'#1a7a42';
         const abg=r.type==='danger'?'#b03030':r.type==='warn'?'#7a4a00':'#1a7a42';
@@ -1482,8 +1482,8 @@ onKeyDown={e=>e.key==="Enter"&&updateSnapshotBalance(item.id,e.target.value)}/>
         {[...data.variableBuckets].map(b=>({...b, spent:data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).reduce((s,e)=>s+Number(e.amount),0)})).sort((a,b2)=>(b2.spent/b2.amount)-(a.spent/a.amount)).slice(0,7).map(b=>{
           const p = Math.min((b.spent/b.amount)*100, 100);
           const over = b.spent > b.amount;
-          const clr = over?'#e07070':p>75?'#e8b87c':'#6bbf8e';
-          const txt = over?'#b03030':'#1a6a4f';
+          const clr = over?'#D07878':p>75?'#C9A96E':'#82B89A';
+          const txt = over?'#A04848':'#2A6A55';
           const track = b.trackingOnly?<span style={{fontSize:9,color:'#777',background:'#f5f5f5',padding:'1px 4px',borderRadius:3,marginRight:4}}>מעקב</span>:null;
           return (
             <div key={b.id} style={{marginBottom:9}}>
@@ -1827,7 +1827,7 @@ style={{background:`linear-gradient(135deg,${t.a},${t.b})`,border:(data.theme||"
 <button onClick={()=>{localStorage.setItem("gemini_api_key",geminiApiKey);showToast("מפתח נשמר","#6a9bc3");}} style={{background:theme.btn,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,cursor:"pointer",flexShrink:0}}>שמור</button>
 </div>
 </div>
-<button onClick={()=>{setResetPin("");setResetError(false);setResetDialog(true);}} style={{width:"100%",background:"#fdf0f0",color:"#e07070",border:"1.5px solid #f5c6c6",borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:"pointer"}}>🗑️ איפוס כל הנתונים</button>
+<button onClick={()=>{setResetPin("");setResetError(false);setResetDialog(true);}} style={{width:"100%",background:"#FAF0F0",color:"#e07070",border:"1.5px solid #f5c6c6",borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:"pointer"}}>🗑️ איפוס כל הנתונים</button>
 </>
 )}
 </div>
