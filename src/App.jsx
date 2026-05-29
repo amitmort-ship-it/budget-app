@@ -48,6 +48,18 @@ const sendToTelegram = async (expense, getBucketName) => {
     });
   } catch(err) { console.error("Telegram error", err); }
 };
+const sendNoteToTelegram = async (note) => {
+  const title = note.title ? note.title + "\n" : "";
+  const date = note.createdAt ? new Date(note.createdAt).toLocaleDateString("he-IL") : "";
+  const msg = "📝 " + title + note.body + "\n\n📅 " + date;
+  try {
+    await fetch("https://api.telegram.org/bot" + TG_BOT_TOKEN + "/sendMessage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: TG_CHAT_ID, text: msg })
+    });
+  } catch(err) { console.error("Telegram note error", err); }
+};
 
 const ICONS = {
 // משתנות (0-10)
@@ -1722,6 +1734,7 @@ style={{width:18,height:18,borderRadius:"50%",background:c,border:editNote.color
 <span style={{fontSize:10,color:"rgba(0,0,0,.3)"}}>{new Date(n.createdAt).toLocaleDateString("he-IL")}</span>
 <div style={{display:"flex",gap:6}}>
 <button onClick={()=>setEditNote({...n})} style={{background:"rgba(0,0,0,.07)",border:"none",borderRadius:8,padding:"4px 8px",fontSize:11,cursor:"pointer"}}>✏️</button>
+<button onClick={()=>sendNoteToTelegram(n)} title="שלח לטלגרם" style={{background:"rgba(0,136,204,.1)",border:"none",borderRadius:8,padding:"4px 8px",fontSize:11,color:"#0088cc",cursor:"pointer"}}>📤</button>
 <button onClick={()=>deleteNote(n.id)} style={{background:"rgba(224,112,112,.1)",border:"none",borderRadius:8,padding:"4px 8px",fontSize:11,color:"#e07070",cursor:"pointer"}}>✕</button>
 </div>
 </div>
