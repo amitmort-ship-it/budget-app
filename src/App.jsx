@@ -60,6 +60,62 @@ const sendNoteToTelegram = async (note) => {
     });
   } catch(err) { console.error("Telegram note error", err); }
 };
+const sendWeeklyReport = async (expenses, varBuckets) => {
+  const now = new Date();
+  const dayNames = ['אחד','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+  const varBudgetMonthly = varBuckets.reduce((s,b)=>s+Number(b.amount||0),0);
+  const weeklyBudget = Math.round(varBudgetMonthly/4.33);
+  const todayDay = now.getDay();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate()-todayDay);
+  weekStart.setHours(0,0,0,0);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate()+6);
+  weekEnd.setHours(23,59,59,999);
+  const weekExp = expenses.filter(e=>{
+    const ed=new Date(e.date||e.createdAt);
+    return ed>=weekStart && ed<=weekEnd && varBuckets.find(b=>b.id===e.bucketId);
+  });
+  const weekSpent = weekExp.reduce((s,e)=>s+Number(e.amount||0),0);
+  const weekLeft = weeklyBudget - weekSpent;
+  const byBucket = {};
+  for(const e of weekExp){
+    const bucket=varBuckets.find(b=>b.id===e.bucketId);
+    const name=bucket?bucket.name:'אחר';
+    byBucket[name]=(byBucket[name]||0)+Number(e.amount||0);
+  }
+  const sorted = Object.entries(byBucket).sort((a,b)=>b[1]-a[1]);
+  const weekStartStr = weekStart.toLocaleDateString('he-IL');
+  const weekEndStr = weekEnd.toLocaleDateString('he-IL');
+  const lines = [
+    '📅 דוח שבועי | יום '+dayNames[now.getDay()]+' '+now.toLocaleDateString('he-IL'),
+    weekStartStr+' - '+weekEndStr,
+    '',
+    '💰 תקציב שבועי: ₪'+weeklyBudget.toLocaleString('he-IL'),
+    '💸 הוצאות שבוע זה: ₪'+weekSpent.toLocaleString('he-IL'),
+    weekLeft>=0?'✅ נותר לשבוע: ₪'+weekLeft.toLocaleString('he-IL'):'⚠️ חרגת מהתקציב ב: ₪'+Math.abs(weekLeft).toLocaleString('he-IL'),
+    '',
+  ];
+  if(sorted.length>0){
+    lines.push('📊 הוצאות לפי קטגוריה:');
+    for(const [name,amount] of sorted){
+      const pct=Math.round((amount/weekSpent)*100);
+      lines.push('  • '+name+': ₪'+amount.toLocaleString('he-IL')+' ('+pct+'%)');
+    }
+  } else {
+    lines.push('🎉 אין הוצאות השבוע עד כאן!');
+  }
+  try {
+    await fetch('https://api.telegram.org/bot'+TG_BOT_TOKEN+'/sendMessage',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:TG_CHAT_ID,text:lines.join('\n')})
+    });
+    alert('הדוח נשלח לטלגרם ✅');
+  } catch(err){
+    alert('שגיאה בשליחה לטלגרם');
+  }
+};
+
 
 const ICONS = {
 // משתנות (0-10)
@@ -1771,6 +1827,11 @@ style={{width:18,height:18,borderRadius:"50%",background:c,border:editNote.color
 ⬇️ הורד {exportType==="weekly"?"דוח שבועי":"דוח חודשי"}
 </button>
 {exportType==="monthly"&&<div style={{fontSize:10,color:"rgba(255,255,255,.65)",marginTop:6,textAlign:"center"}}>כולל: הוצאות + סוג · סיכום קטגוריות · פירוט שבועי · לפי אמצעי תשלום</div>}
+</div>
+<div style={cardStyle}>
+<div style={{fontWeight:800,fontSize:14,marginBottom:12,color:theme.primary}}>📲 טלגרם</div>
+<div style={{fontSize:12,color:theme.subText,marginBottom:12}}>שלח דוח שבועי לקבוצת הוואצאפ כעת</div>
+<button onClick={()=>sendWeeklyReport(state.expenses||[],state.variableBuckets||[])} style={{width:"100%",background:theme.primary,color:"#fff",border:"none",borderRadius:10,padding:"11px",fontSize:13,fontWeight:800,cursor:"pointer"}}>📊 שלח דוח שבועי לטלגרם</button>
 </div>
 <div style={cardStyle}>
 <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>💰 מקורות הכנסה</div>
