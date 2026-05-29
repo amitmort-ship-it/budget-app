@@ -9,7 +9,7 @@ jobs:
   send-report:
     runs-on: ubuntu-latest
     steps:
-      - name: Send budget report to Telegram
+      - name: Send weekly budget report to Telegram
         uses: actions/github-script@v7
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -18,6 +18,16 @@ jobs:
         with:
           script: |
             const https = require('https');
+
+            function get(hostname, path, headers) {
+              return new Promise((resolve, reject) => {
+                https.get({ hostname, path, headers }, res => {
+                  let d = '';
+                  res.on('data', c => d += c);
+                  res.on('end', () => resolve(JSON.parse(d)));
+                }).on('error', reject);
+              });
+            }
 
             function post(hostname, path, body) {
               return new Promise((resolve, reject) => {
@@ -36,16 +46,6 @@ jobs:
               });
             }
 
-            function get(hostname, path, headers) {
-              return new Promise((resolve, reject) => {
-                https.get({ hostname, path, headers }, res => {
-                  let d = '';
-                  res.on('data', c => d += c);
-                  res.on('end', () => resolve(JSON.parse(d)));
-                }).on('error', reject);
-              });
-            }
-
             const SUPABASE_URL = process.env.SUPABASE_URL;
             const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
             const TG_TOKEN = process.env.TG_BOT_TOKEN;
@@ -60,46 +60,69 @@ jobs:
             if (!data) { console.log('No data'); return; }
 
             const now = new Date();
-            const days = ['אחד','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-            const dateStr = now.toLocaleDateString('he-IL');
+            const dayNames = ['אחד','שני','שלישי','רביעי','חמישי','שישי','שבת'];
 
             const expenses = data.expenses || [];
-            const incomes = data.incomes || [];
             const varBuckets = data.variableBuckets || [];
-            const fixBuckets = data.fixedBuckets || [];
 
-            const totalIncome = incomes.reduce((s, i) => s + Number(i.amount || 0), 0);
-            const fixBudget = fixBuckets.reduce((s, b) => s + Number(b.amount || 0), 0);
-            const varBudget = varBuckets.reduce((s, b) => s + Number(b.amount || 0), 0);
+            // Weekly budget = monthly variable budget / 4.33
+            const varBudgetMonthly = varBuckets.reduce((s, b) => s + Number(b.amount || 0), 0);
+            const weeklyBudget = Math.round(varBudgetMonthly / 4.33);
 
-            const cycleDay = data.cycleStartDay || 10;
-            const d = now.getDate();
-            const m = d >= cycleDay ? now.getMonth() : now.getMonth() - 1;
-            const y = m < 0 ? now.getFullYear() - 1 : now.getFullYear();
-            const cycleStart = new Date(y, (m + 12) % 12, cycleDay);
-            const cycleEnd = new Date(y, (m + 12) % 12 + 1, cycleDay - 1);
+            // This week = last 7 days (Sun-Sat or rolling 7 days)
+            // Use start of current week (Sunday)
+            const todayDay = now.getDay(); // 0=Sun
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - todayDay);
+            weekStart.setHours(0, 0, 0, 0);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            weekEnd.setHours(23, 59, 59, 999);
 
-            const cycleExp = expenses.filter(e => {
+            // Filter expenses this week that are variable (not fixed)
+            const weekExpenses = expenses.filter(e => {
               const ed = new Date(e.date || e.createdAt);
-              return ed >= cycleStart && ed <= cycleEnd;
+              return ed >= weekStart && ed <= weekEnd && varBuckets.find(b => b.id === e.bucketId);
             });
 
-            const totalSpent = cycleExp.reduce((s, e) => s + Number(e.amount || 0), 0);
-            const varSpent = cycleExp.filter(e => varBuckets.find(b => b.id === e.bucketId))
-              .reduce((s, e) => s + Number(e.amount || 0), 0);
-            const varLeft = varBudget - varSpent;
-            const pct = Math.round((totalSpent / (fixBudget + varBudget)) * 100);
+            const weekSpent = weekExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+            const weekLeft = weeklyBudget - weekSpent;
+
+            // Group by category (bucket)
+            const byBucket = {};
+            for (const e of weekExpenses) {
+              const bucket = varBuckets.find(b => b.id === e.bucketId);
+              const name = bucket ? bucket.name : 'אחר';
+              byBucket[name] = (byBucket[name] || 0) + Number(e.amount || 0);
+            }
+
+            // Sort by amount desc
+            const sortedBuckets = Object.entries(byBucket).sort((a, b) => b[1] - a[1]);
+
+            const weekStartStr = weekStart.toLocaleDateString('he-IL');
+            const weekEndStr = weekEnd.toLocaleDateString('he-IL');
 
             const lines = [
-              '📊 דוח תקציב | ' + days[now.getDay()] + ' ' + dateStr,
+              '📅 דוח שבועי | יום ' + dayNames[now.getDay()] + ' ' + now.toLocaleDateString('he-IL'),
+              weekStartStr + ' - ' + weekEndStr,
               '',
-              '💰 הכנסה: ₪' + totalIncome.toLocaleString('he-IL'),
-              '💸 הוצאות: ₪' + totalSpent.toLocaleString('he-IL') + ' (' + pct + '%)',
-              '💳 קבועות: ₪' + fixBudget.toLocaleString('he-IL'),
-              '🎯 משתנות נוצל: ₪' + varSpent.toLocaleString('he-IL') + ' / ₪' + varBudget.toLocaleString('he-IL'),
-              '✅ נותר למשתנות: ₪' + varLeft.toLocaleString('he-IL'),
-              '📅 ' + cycleStart.toLocaleDateString('he-IL') + ' - ' + cycleEnd.toLocaleDateString('he-IL')
+              '💰 תקציב שבועי: ₪' + weeklyBudget.toLocaleString('he-IL'),
+              '💸 הוצאות שבוע זה: ₪' + weekSpent.toLocaleString('he-IL'),
+              weekLeft >= 0
+                ? '✅ נותר לשבוע: ₪' + weekLeft.toLocaleString('he-IL')
+                : '⚠️ חרגת מהתקציב ב: ₪' + Math.abs(weekLeft).toLocaleString('he-IL'),
+              ''
             ];
+
+            if (sortedBuckets.length > 0) {
+              lines.push('📊 הוצאות לפי קטגוריה:');
+              for (const [name, amount] of sortedBuckets) {
+                const pct = Math.round((amount / weekSpent) * 100);
+                lines.push('  • ' + name + ': ₪' + amount.toLocaleString('he-IL') + ' (' + pct + '%)');
+              }
+            } else {
+              lines.push('🎉 אין הוצאות השבוע עד כאן!');
+            }
 
             const result = await post('api.telegram.org', '/bot' + TG_TOKEN + '/sendMessage', {
               chat_id: TG_CHAT, text: lines.join('\n')
