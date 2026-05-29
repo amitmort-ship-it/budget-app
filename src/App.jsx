@@ -32,6 +32,22 @@ body: JSON.stringify({ id: 'main', data, updated_at: new Date().toISOString() })
 }
 
 const STORAGE_KEY = "home-expense-tracker-v2";
+const TG_BOT_TOKEN = "8952474670:AAFvcadraSFVD_k3lsq7iYJugdtN_9z7tsg";
+const TG_CHAT_ID = "-5182091532";
+const sendToTelegram = async (expense, getBucketName) => {
+  const icon = ICONS[expense.bucketId] || "";
+  const bucket = getBucketName ? getBucketName(expense.bucketId) : expense.bucketId;
+  const date = expense.date ? new Date(expense.date).toLocaleDateString("he-IL") : "";
+  const note = expense.note ? "\nהערה: " + expense.note : "";
+  const msg = "💸 הוצאה נרשמה\n" + icon + " " + bucket + "\n💰 ₪" + Number(expense.amount).toLocaleString("he-IL") + "\n📅 " + date + note;
+  try {
+    await fetch("https://api.telegram.org/bot" + TG_BOT_TOKEN + "/sendMessage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: TG_CHAT_ID, text: msg })
+    });
+  } catch(err) { console.error("Telegram error", err); }
+};
 
 const ICONS = {
 // משתנות (0-10)
@@ -1051,6 +1067,7 @@ return (
 <div style={{display:"flex",alignItems:"center",gap:8}}>
 <span style={{fontWeight:800,color:"#e07070",fontSize:15}}>₪{Number(e.amount).toLocaleString("he-IL")}</span>
 <button onClick={()=>setEditExpense({...e})} style={{background:theme.btnLight,border:"none",color:theme.btn,borderRadius:7,padding:"3px 7px",cursor:"pointer",fontSize:11}}>✏️</button>
+<button onClick={()=>sendToTelegram(e, getBucketName)} title="שלח לטלגרם" style={{background:"none",border:"none",cursor:"pointer",fontSize:16,padding:0}}>📤</button>
 <button onClick={()=>deleteExpense(e.id)} style={{background:"none",border:"none",color:"#c0cad8",cursor:"pointer",fontSize:16,padding:0}}>✕</button>
 </div>
 </div>
@@ -1650,6 +1667,7 @@ style={{...inputStyle,width:"100%",marginBottom:10,boxSizing:"border-box",fontSi
 <div style={{display:"flex",alignItems:"center",gap:8}}>
 <span style={{fontWeight:800,color:"#e07070"}}>₪{Number(e.amount).toLocaleString("he-IL")}</span>
 <button onClick={()=>setEditExpense({...e})} style={{background:theme.btnLight,border:"none",color:theme.btn,borderRadius:7,padding:"3px 7px",cursor:"pointer",fontSize:11}}>✏️</button>
+<button onClick={()=>sendToTelegram(e, getBucketName)} title="שלח לטלגרם" style={{background:"none",border:"none",cursor:"pointer",fontSize:16,padding:0}}>📤</button>
 <button onClick={()=>deleteExpense(e.id)} style={{background:"none",border:"none",color:"#c0cad8",cursor:"pointer",fontSize:14}}>✕</button>
 </div>
 </div>
