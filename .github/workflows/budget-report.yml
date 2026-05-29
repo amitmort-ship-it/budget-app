@@ -1,0 +1,108 @@
+name: Budget Report
+
+on:
+  schedule:
+    - cron: '0 9 * * 0,2,4'
+  workflow_dispatch:
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send budget report to Telegram
+        run: |
+          node -e "
+          const https = require('https');
+
+          function fetchData(url, options) {
+            return new Promise((resolve, reject) => {
+              const req = https.request(url, options, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => resolve(JSON.parse(data)));
+              });
+              req.on('error', reject);
+              if (options.body) req.write(options.body);
+              req.end();
+            });
+          }
+
+          async function main() {
+            const SUPABASE_URL = process.env.SUPABASE_URL;
+            const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+            const TG_TOKEN = process.env.TG_BOT_TOKEN;
+            const TG_CHAT = '-5182091532';
+
+            const url = new URL(SUPABASE_URL + '/rest/v1/budget_data?id=eq.main&select=data');
+            const options = {
+              hostname: url.hostname,
+              path: url.pathname + url.search,
+              method: 'GET',
+              headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+            };
+
+            const rows = await fetchData(url.toString().replace('https://', ''), options);
+            const data = rows[0]?.data;
+            if (!data) { console.log('No data found'); return; }
+
+            const now = new Date();
+            const dayNames = ['אחד','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+            const dayName = dayNames[now.getDay()];
+            const dateStr = now.toLocaleDateString('he-IL');
+
+            const incomes = data.incomes || [];
+            const totalIncome = incomes.reduce((s, i) => s + Number(i.amount || 0), 0);
+            const fixedBuckets = data.fixedBuckets || [];
+            const variableBuckets = data.variableBuckets || [];
+            const expenses = data.expenses || [];
+
+            const cycleStartDay = data.cycleStartDay || 10;
+            const today = now.getDate();
+            const cycleMonth = today >= cycleStartDay ? now.getMonth() : now.getMonth() - 1;
+            const cycleYear = cycleMonth < 0 ? now.getFullYear() - 1 : now.getFullYear();
+            const cycleStart = new Date(cycleYear, (cycleMonth + 12) % 12, cycleStartDay);
+            const cycleEnd = new Date(cycleYear, (cycleMonth + 12) % 12 + 1, cycleStartDay - 1);
+
+            const cycleExpenses = expenses.filter(e => {
+              const d = new Date(e.date || e.createdAt);
+              return d >= cycleStart && d <= cycleEnd;
+            });
+            const totalSpent = cycleExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+
+            const fixedBudget = fixedBuckets.reduce((s, b) => s + Number(b.amount || 0), 0);
+            const variableBudget = variableBuckets.reduce((s, b) => s + Number(b.amount || 0), 0);
+            const totalBudget = fixedBudget + variableBudget;
+            const remaining = totalIncome - totalSpent - fixedBudget;
+            const variableSpent = cycleExpenses.filter(e => variableBuckets.find(b => b.id === e.bucketId)).reduce((s, e) => s + Number(e.amount || 0), 0);
+            const variableRemaining = variableBudget - variableSpent;
+            const pct = Math.round((totalSpent / totalBudget) * 100);
+
+            const msg = [`📊 דוח תקציב שבועי | ${dayName} ${dateStr}`,
+              ``,
+              `💰 הכנסה: ₪${totalIncome.toLocaleString('he-IL')}`,
+              `💸 הוצאות החודש: ₪${totalSpent.toLocaleString('he-IL')} (${pct}%)`,
+              `💳 קבועות: ₪${fixedBudget.toLocaleString('he-IL')}`,
+              `🎯 משתנות שנוצל: ₪${variableSpent.toLocaleString('he-IL')} / ₪${variableBudget.toLocaleString('he-IL')}`,
+              `✅ נותר למשתנות: ₪${variableRemaining.toLocaleString('he-IL')}`,
+              `📅 מחזור ${cycleStart.toLocaleDateString('he-IL')} - ${cycleEnd.toLocaleDateString('he-IL')}`
+            ].join('
+');
+
+            const tgUrl = new URL('https://api.telegram.org/bot' + TG_TOKEN + '/sendMessage');
+            const body = JSON.stringify({ chat_id: TG_CHAT, text: msg });
+            const tgOptions = {
+              hostname: 'api.telegram.org',
+              path: '/bot' + TG_TOKEN + '/sendMessage',
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+            };
+            const result = await fetchData('api.telegram.org', tgOptions, body);
+            console.log('Sent:', result.ok);
+          }
+
+          main().catch(console.error);
+          "
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
