@@ -65,9 +65,17 @@ jobs:
             const expenses = data.expenses || [];
             const varBuckets = data.variableBuckets || [];
 
-            // Weekly variable budget = monthly variable / 4.33 (approx)
+            // Weekly budget = (monthly non-tracking variable) / daysLeft * daysThisWeekInCycle
             const varMonthly = varBuckets.filter(b => !b.trackingOnly).reduce((s, b) => s + Number(b.amount || 0), 0);
-            const weeklyBudget = Math.round(varMonthly / 4.33);
+            const today = new Date(); today.setHours(0,0,0,0);
+            const cycleEnd = new Date(today); if(today.getDate() >= 10) { cycleEnd.setMonth(cycleEnd.getMonth()+1); } cycleEnd.setDate(9); cycleEnd.setHours(23,59,59,999);
+            const daysLeft = Math.max(1, Math.round((cycleEnd - today) / 86400000) + 1);
+            const dailyBudget = varMonthly / daysLeft;
+            const currentWeekSun = new Date(today); currentWeekSun.setDate(today.getDate() - today.getDay());
+            const currentWeekSat = new Date(currentWeekSun); currentWeekSat.setDate(currentWeekSun.getDate() + 6); currentWeekSat.setHours(23,59,59,999);
+            const weekEnd = currentWeekSat > cycleEnd ? cycleEnd : currentWeekSat;
+            const daysThisWeek = Math.max(1, Math.round((weekEnd - today) / 86400000) + 1);
+            const weeklyBudget = Math.round(dailyBudget * daysThisWeek);
 
             // Current week: Sunday to Saturday
             const todayDay = now.getDay();
