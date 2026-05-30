@@ -227,7 +227,7 @@ incomeAcc:"#d4607a",
 function getWeekId(date = new Date()) {
 const d = new Date(date);
 d.setHours(0, 0, 0, 0);
-d.setDate(d.getDate() - d.getDay() + 1);
+d.setDate(d.getDate() - d.getDay());
 return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
