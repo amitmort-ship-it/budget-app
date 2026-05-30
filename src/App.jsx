@@ -60,7 +60,7 @@ const sendNoteToTelegram = async (note) => {
     });
   } catch(err) { console.error("Telegram note error", err); }
 };
-const sendWeeklyReport = async (expenses, varBuckets, weeklyBudget) => {
+const sendWeeklyReport = async (expenses, varBuckets, weeklyBudget, toast) => {
   const now = new Date();
   const dayNames = ['אחד','שני','שלישי','רביעי','חמישי','שישי','שבת'];
   const todayDay = now.getDay();
@@ -108,9 +108,9 @@ const sendWeeklyReport = async (expenses, varBuckets, weeklyBudget) => {
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({chat_id:TG_CHAT_ID,text:lines.join('\n')})
     });
-    alert('הדוח נשלח לטלגרם ✅');
+    toast ? toast('דוח נשלח לטלגרם ✅') : null;
   } catch(err){
-    alert('שגיאה בשליחה לטלגרם');
+    toast ? toast('שגיאה בשליחה', '#e07070') : null;
   }
 };
 
@@ -1829,7 +1829,7 @@ style={{width:18,height:18,borderRadius:"50%",background:c,border:editNote.color
 <div style={cardStyle}>
 <div style={{fontWeight:800,fontSize:14,marginBottom:12,color:theme.primary}}>📲 טלגרם</div>
 <div style={{fontSize:12,color:theme.subText,marginBottom:12}}>שלח דוח שבועי לקבוצת הוואצאפ כעת</div>
-<button onClick={()=>sendWeeklyReport(data.expenses||[],data.variableBuckets||[],getWeekBudget(getWeekId()))} style={{width:"100%",background:theme.primary,color:"#fff",border:"none",borderRadius:10,padding:"11px",fontSize:13,fontWeight:800,cursor:"pointer"}}>📊 שלח דוח שבועי לטלגרם</button>
+<button onClick={()=>sendWeeklyReport(data.expenses||[],data.variableBuckets||[],getWeekBudget(getWeekId()),showToast)} style={{width:"100%",background:theme.primary,color:"#fff",border:"none",borderRadius:10,padding:"11px",fontSize:13,fontWeight:800,cursor:"pointer"}}>📊 שלח דוח שבועי לטלגרם</button>
 </div>
 <div style={cardStyle}>
 <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>💰 מקורות הכנסה</div>
