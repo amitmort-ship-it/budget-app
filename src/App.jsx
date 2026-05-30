@@ -294,11 +294,15 @@ function computeWeekBudgetMap(expensesArr, variableBucketsArr, cycleS, cycleE) {
     return d >= cycleS && d <= cycleE && _varIds.has(e.bucketId) && !_trackingIds.has(e.bucketId);
   }).reduce((s,e)=>s+Number(e.amount||0),0);
   const remaining = Math.max(0, totalVarOnBudget - cycleSpent);
-  // Days remaining from today (inclusive) to cycle end
+  // Days remaining from START OF CURRENT WEEK (inclusive) to cycle end
+  // This ensures the current week gets its full proportional share
   const todayMs = (() => { const t = new Date(); t.setHours(0,0,0,0); return t; })();
-  const daysLeft = Math.max(1, Math.round((cycleE - todayMs) / 86400000) + 1);
+  const currentWeekSun = new Date(todayMs); currentWeekSun.setDate(todayMs.getDate() - todayMs.getDay()); currentWeekSun.setHours(0,0,0,0);
+  // Days from start of current week that are still in cycle
+  const weekAnchor = currentWeekSun < cycleS ? cycleS : currentWeekSun;
+  const daysLeft = Math.max(1, Math.round((cycleE - weekAnchor) / 86400000) + 1);
   const dailyRate = remaining / daysLeft;
-  // Build map: weekId → budget for that week
+  // Build map: weekId -> budget for that week (overlap with cycle, from weekAnchor onward)
   const map = {};
   const weeks = [];
   let cur = new Date(cycleS);
@@ -307,12 +311,10 @@ function computeWeekBudgetMap(expensesArr, variableBucketsArr, cycleS, cycleE) {
   for (const wid of uniqueWeeks) {
     const wSun = new Date(wid); wSun.setHours(0,0,0,0);
     const wSat = new Date(wSun); wSat.setDate(wSun.getDate()+6); wSat.setHours(23,59,59,999);
-    const overlapStart = wSun < cycleS ? cycleS : wSun;
+    const overlapStart = wSun < weekAnchor ? weekAnchor : wSun;
     const overlapEnd = wSat > cycleE ? cycleE : wSat;
-    // Only budget future/current weeks from today
-    const budgetStart = overlapStart < todayMs ? todayMs : overlapStart;
-    if (budgetStart > overlapEnd) { map[wid] = map[wid] || 0; continue; }
-    const days = Math.max(0, Math.round((overlapEnd - budgetStart) / 86400000) + 1);
+    if (overlapStart > overlapEnd) { map[wid] = 0; continue; }
+    const days = Math.max(0, Math.round((overlapEnd - overlapStart) / 86400000) + 1);
     map[wid] = Math.round(dailyRate * days);
   }
   return map;
@@ -408,7 +410,9 @@ const _prevExpenseTotal = (data.expenses||[]).filter(e=>{const d=new Date(e.date
 const _nextExpenseTotal = (next.expenses||[]).filter(e=>{const d=new Date(e.date);d.setHours(0,0,0,0);return d>=_cs&&d<=_ce;}).reduce((s,e)=>s+Number(e.amount||0),0);
 const _delta = Math.abs(_nextExpenseTotal - _prevExpenseTotal);
 const _threshold = Math.max(50, (_prevBudget||100) * 0.10);
-const _needsRebalance = _isSunday || !_prevMap[_wid] || _delta >= _threshold;
+const _currentMapBudget = _prevMap[_wid];
+const _mapIsStale = _currentMapBudget === undefined || _currentMapBudget === 0;
+const _needsRebalance = _isSunday || _mapIsStale || _delta >= _threshold;
 let finalNext = next;
 if (_needsRebalance) {
   const _newMap = computeWeekBudgetMap(next.expenses||[], next.variableBuckets||[], _cs, _ce);
@@ -485,7 +489,10 @@ const storedMap = data.weekBudgetMap || {};
 const isSunday = today.getDay() === 0;
 const mapHasCurrentWeek = storedMap[currentWeekId] !== undefined;
 // Use stored map if available and not Sunday (stable), else use computed
-const activeBudgetMap = (!isSunday && mapHasCurrentWeek) ? storedMap : computeWeekBudgetMap(data.expenses, data.variableBuckets, cycleStart, cycleEnd);
+// Recompute if: it's Sunday, map missing current week, OR current week budget is 0 (stale/wrong)
+const mapCurrentWeekBudget = storedMap[currentWeekId];
+const mapIsStale = mapCurrentWeekBudget === undefined || mapCurrentWeekBudget === 0;
+const activeBudgetMap = (!isSunday && !mapIsStale) ? storedMap : computeWeekBudgetMap(data.expenses, data.variableBuckets, cycleStart, cycleEnd);
 const dynamicWeeklyBudget = activeBudgetMap[currentWeekId] || 0;
 const weeksRemainingInCycle = allCycleWeekIds.filter(w => w >= currentWeekId).length;
 const weeklyFixedOverflowPenalty = fixedOverflowThisMonth / Math.max(1, weeksRemainingInCycle);
