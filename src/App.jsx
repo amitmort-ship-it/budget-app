@@ -228,7 +228,7 @@ function getWeekId(date = new Date()) {
 const d = new Date(date);
 d.setHours(0, 0, 0, 0);
 d.setDate(d.getDate() - d.getDay() + 1);
-return d.toISOString().slice(0, 10);
+return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
 function getWeekLabel(weekId) {
@@ -283,7 +283,7 @@ function computeWeekBudgetMap(expensesArr, variableBucketsArr, cycleS, cycleE) {
   const _getWeekId = (d) => {
     const dt = d ? new Date(d) : new Date();
     const sun = new Date(dt); sun.setDate(dt.getDate() - dt.getDay()); sun.setHours(0,0,0,0);
-    return sun.toISOString().slice(0,10);
+    return sun.getFullYear() + '-' + String(sun.getMonth()+1).padStart(2,'0') + '-' + String(sun.getDate()).padStart(2,'0');
   };
   const _trackingIds = new Set(variableBucketsArr.filter(b=>b.trackingOnly).map(b=>b.id));
   const _varIds = new Set(variableBucketsArr.map(b=>b.id));
