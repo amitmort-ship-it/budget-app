@@ -149,6 +149,7 @@ expenses: [],
 paymentMethods: [],
 savings: [],
 incomes: [],
+weekBudgetMap: {},
 theme: "pastel",
 notes: [],
 savingsSnapshot: [],
@@ -275,6 +276,48 @@ const expCycleStr = getCycleStart(new Date(expense.date)).toISOString().slice(0,
 return expCycleStr <= cycleStartStr;
 }
 
+// ── Stable Weekly Budget Mechanism ───────────────────────────────────────
+// computeWeekBudgetMap: calculates budget allocation for each week in the cycle
+// Called on Sundays, first load, or when a change exceeds 10% of current week's budget
+function computeWeekBudgetMap(expensesArr, variableBucketsArr, cycleS, cycleE) {
+  const _getWeekId = (d) => {
+    const dt = d ? new Date(d) : new Date();
+    const sun = new Date(dt); sun.setDate(dt.getDate() - dt.getDay()); sun.setHours(0,0,0,0);
+    return sun.toISOString().slice(0,10);
+  };
+  const _trackingIds = new Set(variableBucketsArr.filter(b=>b.trackingOnly).map(b=>b.id));
+  const _varIds = new Set(variableBucketsArr.map(b=>b.id));
+  const totalVarOnBudget = variableBucketsArr.filter(b=>!b.trackingOnly).reduce((s,b)=>s+Number(b.amount||0),0);
+  // All non-tracking variable expenses already spent in this cycle
+  const cycleSpent = expensesArr.filter(e => {
+    const d = new Date(e.date); d.setHours(0,0,0,0);
+    return d >= cycleS && d <= cycleE && _varIds.has(e.bucketId) && !_trackingIds.has(e.bucketId);
+  }).reduce((s,e)=>s+Number(e.amount||0),0);
+  const remaining = Math.max(0, totalVarOnBudget - cycleSpent);
+  // Days remaining from today (inclusive) to cycle end
+  const todayMs = (() => { const t = new Date(); t.setHours(0,0,0,0); return t; })();
+  const daysLeft = Math.max(1, Math.round((cycleE - todayMs) / 86400000) + 1);
+  const dailyRate = remaining / daysLeft;
+  // Build map: weekId → budget for that week
+  const map = {};
+  const weeks = [];
+  let cur = new Date(cycleS);
+  while (cur <= cycleE) { weeks.push(_getWeekId(cur)); cur.setDate(cur.getDate()+7); }
+  const uniqueWeeks = [...new Set(weeks)];
+  for (const wid of uniqueWeeks) {
+    const wSun = new Date(wid); wSun.setHours(0,0,0,0);
+    const wSat = new Date(wSun); wSat.setDate(wSun.getDate()+6); wSat.setHours(23,59,59,999);
+    const overlapStart = wSun < cycleS ? cycleS : wSun;
+    const overlapEnd = wSat > cycleE ? cycleE : wSat;
+    // Only budget future/current weeks from today
+    const budgetStart = overlapStart < todayMs ? todayMs : overlapStart;
+    if (budgetStart > overlapEnd) { map[wid] = map[wid] || 0; continue; }
+    const days = Math.max(0, Math.round((overlapEnd - budgetStart) / 86400000) + 1);
+    map[wid] = Math.round(dailyRate * days);
+  }
+  return map;
+}
+
 export default function App() {
 const [data, setData] = useState(() => {
 try {
@@ -349,12 +392,36 @@ const ocrFileRef = useRef(null);
 const [selectedDay, setSelectedDay] = useState(null);
 const [expandedCategory, setExpandedCategory] = useState(null); // bucket id
 const save = useCallback((next) => {
-setData(next);
-try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+// Rebalance weekBudgetMap on Sunday OR if expense/income change > 10% of current week budget
+const _today = new Date(); _today.setHours(0,0,0,0);
+const _isSunday = _today.getDay() === 0;
+const _prevMap = (data.weekBudgetMap) || {};
+const _getCycleStart = (d) => { const t = new Date(d); if(t.getDate()>=10){t.setDate(10);}else{t.setMonth(t.getMonth()-1);t.setDate(10);} t.setHours(0,0,0,0); return t; };
+const _getCycleEnd = (cs) => { const e = new Date(cs); e.setMonth(e.getMonth()+1); e.setDate(9); e.setHours(23,59,59,999); return e; };
+const _getWeekId2 = (d) => { const dt = d ? new Date(d) : new Date(); const s = new Date(dt); s.setDate(dt.getDate()-dt.getDay()); s.setHours(0,0,0,0); return s.toISOString().slice(0,10); };
+const _cs = _getCycleStart(_today);
+const _ce = _getCycleEnd(_cs);
+const _wid = _getWeekId2();
+const _prevBudget = _prevMap[_wid] || 0;
+// Check if expenses or incomes changed significantly
+const _prevExpenseTotal = (data.expenses||[]).filter(e=>{const d=new Date(e.date);d.setHours(0,0,0,0);return d>=_cs&&d<=_ce;}).reduce((s,e)=>s+Number(e.amount||0),0);
+const _nextExpenseTotal = (next.expenses||[]).filter(e=>{const d=new Date(e.date);d.setHours(0,0,0,0);return d>=_cs&&d<=_ce;}).reduce((s,e)=>s+Number(e.amount||0),0);
+const _delta = Math.abs(_nextExpenseTotal - _prevExpenseTotal);
+const _threshold = Math.max(50, (_prevBudget||100) * 0.10);
+const _needsRebalance = _isSunday || !_prevMap[_wid] || _delta >= _threshold;
+let finalNext = next;
+if (_needsRebalance) {
+  const _newMap = computeWeekBudgetMap(next.expenses||[], next.variableBuckets||[], _cs, _ce);
+  finalNext = { ...next, weekBudgetMap: _newMap };
+} else {
+  finalNext = { ...next, weekBudgetMap: _prevMap };
+}
+setData(finalNext);
+try { localStorage.setItem(STORAGE_KEY, JSON.stringify(finalNext)); } catch {}
 clearTimeout(window._supabaseSaveTimer);
 window._supabaseSaveTimer = setTimeout(() => {
 setSyncing(true);
-saveToSupabase(next).then(() => {
+saveToSupabase(finalNext).then(() => {
 setSyncing(false);
 setLastSync(new Date());
 });
@@ -407,43 +474,36 @@ const totalVariableOnBudget = data.variableBuckets.filter(b=>!b.trackingOnly).re
           return total + Math.max(0, spent - b.amount);
     }, 0);
 
-// ── Automatic dynamic weekly budget ──────────────────────────────────────
-// Budget this week = (monthly variable budget - already spent in past completed weeks - fixed overflow) / weeks remaining
 const currentWeekId = getWeekId();
 const allCycleWeekIds = (() => {
-const weeks = []; let cur = new Date(cycleStart);
-while (cur <= cycleEnd) { weeks.push(getWeekId(cur)); cur.setDate(cur.getDate()+7); }
-return [...new Set(weeks)];
+  const weeks = []; let cur = new Date(cycleStart);
+  while (cur <= cycleEnd) { weeks.push(getWeekId(cur)); cur.setDate(cur.getDate()+7); }
+  return [...new Set(weeks)];
 })();
-const pastCycleWeekIds = allCycleWeekIds.filter(w => w < currentWeekId);
-const spentInPastCycleWeeks = pastCycleWeekIds.reduce((total, wid) => {
-return total + data.expenses.filter(e => getWeekId(e.date)===wid && inCurrentCycle(e.date) && variableBucketIds.has(e.bucketId) && !trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
-}, 0);
-// Dynamic weekly budget = remaining variable budget / days left in cycle x days in current week
-// "remaining" = monthly non-tracking variable budget minus ALL non-tracking variable expenses this cycle
-const allCycleNonTrackingSpent = data.expenses.filter(e => inCurrentCycle(e.date) && variableBucketIds.has(e.bucketId) && !trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
-const remainingVarBudget = Math.max(0, totalVariableOnBudget - allCycleNonTrackingSpent);
-const daysLeftInCycle = Math.max(1, Math.round((cycleEnd - today) / 86400000) + 1);
-const dailyBudgetRate = remainingVarBudget / daysLeftInCycle;
-// Current week boundaries (Sun-Sat)
-const currentWeekSun = new Date(today); currentWeekSun.setDate(today.getDate() - today.getDay()); currentWeekSun.setHours(0,0,0,0);
-const currentWeekSat = new Date(currentWeekSun); currentWeekSat.setDate(currentWeekSun.getDate() + 6); currentWeekSat.setHours(23,59,59,999);
-// Total days of current week within cycle (measured from week start, not from today)
-const weekBudgetStart = currentWeekSun < cycleStart ? cycleStart : currentWeekSun;
-const weekBudgetEnd = currentWeekSat > cycleEnd ? cycleEnd : currentWeekSat;
-const daysInWeek = Math.max(1, Math.round((weekBudgetEnd - weekBudgetStart) / 86400000) + 1);
-const dynamicWeeklyBudget = Math.round(dailyBudgetRate * daysInWeek);
+// Read from stored map (stable), or compute on-the-fly if not available
+const storedMap = data.weekBudgetMap || {};
+const isSunday = today.getDay() === 0;
+const mapHasCurrentWeek = storedMap[currentWeekId] !== undefined;
+// Use stored map if available and not Sunday (stable), else use computed
+const activeBudgetMap = (!isSunday && mapHasCurrentWeek) ? storedMap : computeWeekBudgetMap(data.expenses, data.variableBuckets, cycleStart, cycleEnd);
+const dynamicWeeklyBudget = activeBudgetMap[currentWeekId] || 0;
 const weeksRemainingInCycle = allCycleWeekIds.filter(w => w >= currentWeekId).length;
 const weeklyFixedOverflowPenalty = fixedOverflowThisMonth / Math.max(1, weeksRemainingInCycle);
-// Budget per week = dailyBudgetRate x days of that week within the cycle
-const getWeekBudget = (weekId) => {
-const wSun = new Date(weekId); wSun.setHours(0,0,0,0);
-const wSat = new Date(wSun); wSat.setDate(wSun.getDate()+6); wSat.setHours(23,59,59,999);
-const overlapStart = wSun < cycleStart ? cycleStart : wSun;
-const overlapEnd = wSat > cycleEnd ? cycleEnd : wSat;
-const daysOverlap = Math.max(0, Math.round((overlapEnd - overlapStart) / 86400000) + 1);
-return Math.round(dailyBudgetRate * daysOverlap);
-};
+// Budget per week = from stored stable map
+const getWeekBudget = (weekId) => activeBudgetMap[weekId] !== undefined ? activeBudgetMap[weekId] : (() => {
+  const wSun = new Date(weekId); wSun.setHours(0,0,0,0);
+  const wSat = new Date(wSun); wSat.setDate(wSun.getDate()+6); wSat.setHours(23,59,59,999);
+  const overlapStart = wSun < cycleStart ? cycleStart : wSun;
+  const overlapEnd = wSat > cycleEnd ? cycleEnd : wSat;
+  const todayMs2 = new Date(today);
+  const budgetStart = overlapStart < todayMs2 ? todayMs2 : overlapStart;
+  if (budgetStart > overlapEnd) return 0;
+  const days = Math.max(0, Math.round((overlapEnd - budgetStart) / 86400000) + 1);
+  const allCycleNonTrackingSpent2 = data.expenses.filter(e => inCurrentCycle(e.date) && variableBucketIds.has(e.bucketId) && !trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
+  const remaining2 = Math.max(0, totalVariableOnBudget - allCycleNonTrackingSpent2);
+  const daysLeft2 = Math.max(1, Math.round((cycleEnd - today) / 86400000) + 1);
+  return Math.round((remaining2 / daysLeft2) * days);
+})();
 const weeklyVariableBudget = getWeekBudget(selectedWeek);
 
 const expensesThisWeek = data.expenses.filter(e => getWeekId(e.date) === selectedWeek);
