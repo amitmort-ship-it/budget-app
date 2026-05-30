@@ -1829,7 +1829,7 @@ style={{width:18,height:18,borderRadius:"50%",background:c,border:editNote.color
 <div style={cardStyle}>
 <div style={{fontWeight:800,fontSize:14,marginBottom:12,color:theme.primary}}>📲 טלגרם</div>
 <div style={{fontSize:12,color:theme.subText,marginBottom:12}}>שלח דוח שבועי לקבוצת הוואצאפ כעת</div>
-<button onClick={()=>sendWeeklyReport(state.expenses||[],state.variableBuckets||[],weeklyVariableBudget)} style={{width:"100%",background:theme.primary,color:"#fff",border:"none",borderRadius:10,padding:"11px",fontSize:13,fontWeight:800,cursor:"pointer"}}>📊 שלח דוח שבועי לטלגרם</button>
+<button onClick={()=>sendWeeklyReport(data.expenses||[],data.variableBuckets||[],getWeekBudget(getWeekId()))} style={{width:"100%",background:theme.primary,color:"#fff",border:"none",borderRadius:10,padding:"11px",fontSize:13,fontWeight:800,cursor:"pointer"}}>📊 שלח דוח שבועי לטלגרם</button>
 </div>
 <div style={cardStyle}>
 <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>💰 מקורות הכנסה</div>
