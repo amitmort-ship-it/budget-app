@@ -288,21 +288,20 @@ function computeWeekBudgetMap(expensesArr, variableBucketsArr, cycleS, cycleE) {
   const _trackingIds = new Set(variableBucketsArr.filter(b=>b.trackingOnly).map(b=>b.id));
   const _varIds = new Set(variableBucketsArr.map(b=>b.id));
   const totalVarOnBudget = variableBucketsArr.filter(b=>!b.trackingOnly).reduce((s,b)=>s+Number(b.amount||0),0);
-  // All non-tracking variable expenses already spent in this cycle
+  // All non-tracking variable expenses spent in this cycle
   const cycleSpent = expensesArr.filter(e => {
     const d = new Date(e.date); d.setHours(0,0,0,0);
     return d >= cycleS && d <= cycleE && _varIds.has(e.bucketId) && !_trackingIds.has(e.bucketId);
   }).reduce((s,e)=>s+Number(e.amount||0),0);
   const remaining = Math.max(0, totalVarOnBudget - cycleSpent);
-  // Days remaining from START OF CURRENT WEEK (inclusive) to cycle end
-  // This ensures the current week gets its full proportional share
+  // Anchor = start of current week (Sunday). This is the start of our distribution window.
   const todayMs = (() => { const t = new Date(); t.setHours(0,0,0,0); return t; })();
   const currentWeekSun = new Date(todayMs); currentWeekSun.setDate(todayMs.getDate() - todayMs.getDay()); currentWeekSun.setHours(0,0,0,0);
-  // Days from start of current week that are still in cycle
-  const weekAnchor = currentWeekSun < cycleS ? cycleS : currentWeekSun;
-  const daysLeft = Math.max(1, Math.round((cycleE - weekAnchor) / 86400000) + 1);
-  const dailyRate = remaining / daysLeft;
-  // Build map: weekId -> budget for that week (overlap with cycle, from weekAnchor onward)
+  // Distribution window: from start of current week to cycle end (or cycleS if later)
+  const distStart = currentWeekSun < cycleS ? cycleS : currentWeekSun;
+  const daysTotal = Math.max(1, Math.round((cycleE - distStart) / 86400000) + 1);
+  const dailyRate = remaining / daysTotal;
+  // Build map: weekId -> budget = dailyRate x days of that week within [distStart, cycleE]
   const map = {};
   const weeks = [];
   let cur = new Date(cycleS);
@@ -311,7 +310,7 @@ function computeWeekBudgetMap(expensesArr, variableBucketsArr, cycleS, cycleE) {
   for (const wid of uniqueWeeks) {
     const wSun = new Date(wid); wSun.setHours(0,0,0,0);
     const wSat = new Date(wSun); wSat.setDate(wSun.getDate()+6); wSat.setHours(23,59,59,999);
-    const overlapStart = wSun < weekAnchor ? weekAnchor : wSun;
+    const overlapStart = wSun < distStart ? distStart : wSun;
     const overlapEnd = wSat > cycleE ? cycleE : wSat;
     if (overlapStart > overlapEnd) { map[wid] = 0; continue; }
     const days = Math.max(0, Math.round((overlapEnd - overlapStart) / 86400000) + 1);
