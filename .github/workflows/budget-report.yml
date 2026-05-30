@@ -66,7 +66,7 @@ jobs:
             const varBuckets = data.variableBuckets || [];
 
             // Weekly variable budget = monthly variable / 4.33 (approx)
-            const varMonthly = varBuckets.reduce((s, b) => s + Number(b.amount || 0), 0);
+            const varMonthly = varBuckets.filter(b => !b.trackingOnly).reduce((s, b) => s + Number(b.amount || 0), 0);
             const weeklyBudget = Math.round(varMonthly / 4.33);
 
             // Current week: Sunday to Saturday
@@ -84,7 +84,9 @@ jobs:
               return ed >= weekStart && ed <= weekEnd && varBuckets.find(b => b.id === e.bucketId);
             });
 
-            const weekSpent = weekExp.reduce((s, e) => s + Number(e.amount || 0), 0);
+            const budgetExp = weekExp.filter(e => !varBuckets.find(b => b.id === e.bucketId)?.trackingOnly);
+            const trackingSpent = weekExp.filter(e => varBuckets.find(b => b.id === e.bucketId)?.trackingOnly).reduce((s, e) => s + Number(e.amount || 0), 0);
+            const weekSpent = budgetExp.reduce((s, e) => s + Number(e.amount || 0), 0);
             const weekLeft = weeklyBudget - weekSpent;
 
             // Group by category
@@ -105,6 +107,7 @@ jobs:
               '',
               '💰 תקציב שבועי: ₪' + weeklyBudget.toLocaleString('he-IL'),
               '💸 הוצאות שבוע זה: ₪' + weekSpent.toLocaleString('he-IL'),
+              ...(trackingSpent > 0 ? [`👁 מעקב בלבד (לא כלול בתקציב): ₪${trackingSpent.toLocaleString('he-IL')}`] : []),
               weekLeft >= 0
                 ? '✅ נותר לשבוע: ₪' + weekLeft.toLocaleString('he-IL')
                 : '⚠️ חרגת מהתקציב ב: ₪' + Math.abs(weekLeft).toLocaleString('he-IL'),
