@@ -74,7 +74,9 @@ const sendWeeklyReport = async (expenses, varBuckets, weeklyBudget, toast) => {
     const ed=new Date(e.date||e.createdAt);
     return ed>=weekStart && ed<=weekEnd && varBuckets.find(b=>b.id===e.bucketId);
   });
-  const weekSpent = weekExp.reduce((s,e)=>s+Number(e.amount||0),0);
+  const budgetExp = weekExp.filter(e=>!varBuckets.find(b=>b.id===e.bucketId)?.trackingOnly);
+  const trackingSpent = weekExp.filter(e=>varBuckets.find(b=>b.id===e.bucketId)?.trackingOnly).reduce((s,e)=>s+Number(e.amount||0),0);
+  const weekSpent = budgetExp.reduce((s,e)=>s+Number(e.amount||0),0);
   const weekLeft = weeklyBudget - weekSpent;
   const byBucket = {};
   for(const e of weekExp){
@@ -91,6 +93,7 @@ const sendWeeklyReport = async (expenses, varBuckets, weeklyBudget, toast) => {
     '',
     '💰 תקציב שבועי: ₪'+weeklyBudget.toLocaleString('he-IL'),
     '💸 הוצאות שבוע זה: ₪'+weekSpent.toLocaleString('he-IL'),
+    ...(trackingSpent>0?[`👁 מעקב בלבד (לא כלול בתקציב): ₪${trackingSpent.toLocaleString('he-IL')}`]:[]),
     weekLeft>=0?'✅ נותר לשבוע: ₪'+weekLeft.toLocaleString('he-IL'):'⚠️ חרגת מהתקציב ב: ₪'+Math.abs(weekLeft).toLocaleString('he-IL'),
     '',
   ];
@@ -1829,7 +1832,7 @@ style={{width:18,height:18,borderRadius:"50%",background:c,border:editNote.color
 <div style={cardStyle}>
 <div style={{fontWeight:800,fontSize:14,marginBottom:12,color:theme.primary}}>📲 טלגרם</div>
 <div style={{fontSize:12,color:theme.subText,marginBottom:12}}>שלח דוח שבועי לקבוצת הוואצאפ כעת</div>
-<button onClick={async()=>{await sendWeeklyReport(data.expenses||[],data.variableBuckets||[],getWeekBudget(getWeekId()));showToast("דוח נשלח לטלגרם ✅");}} style={{width:"100%",background:theme.primary,color:"#fff",border:"none",borderRadius:10,padding:"11px",fontSize:13,fontWeight:800,cursor:"pointer"}}>📊 שלח דוח שבועי לטלגרם</button>
+<button onClick={async()=>{try{await sendWeeklyReport(data.expenses||[],data.variableBuckets||[],getWeekBudget(getWeekId()));setToast({msg:"דוח נשלח לטלגרם ✅",color:"#5aa67d"});setTimeout(()=>setToast(null),3000);}catch(err){setToast({msg:"שגיאה בשליחת הדוח",color:"#e07070"});setTimeout(()=>setToast(null),3000);}}} style={{width:"100%",background:theme.primary,color:"#fff",border:"none",borderRadius:10,padding:"11px",fontSize:13,fontWeight:800,cursor:"pointer"}}>📊 שלח דוח שבועי לטלגרם</button>
 </div>
 <div style={cardStyle}>
 <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>💰 מקורות הכנסה</div>
