@@ -60,11 +60,9 @@ const sendNoteToTelegram = async (note) => {
     });
   } catch(err) { console.error("Telegram note error", err); }
 };
-const sendWeeklyReport = async (expenses, varBuckets) => {
+const sendWeeklyReport = async (expenses, varBuckets, weeklyBudget) => {
   const now = new Date();
   const dayNames = ['אחד','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-  const varBudgetMonthly = varBuckets.reduce((s,b)=>s+Number(b.amount||0),0);
-  const weeklyBudget = Math.round(varBudgetMonthly/4.33);
   const todayDay = now.getDay();
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate()-todayDay);
@@ -99,7 +97,7 @@ const sendWeeklyReport = async (expenses, varBuckets) => {
   if(sorted.length>0){
     lines.push('📊 הוצאות לפי קטגוריה:');
     for(const [name,amount] of sorted){
-      const pct=Math.round((amount/weekSpent)*100);
+      const pct=weekSpent>0?Math.round((amount/weekSpent)*100):0;
       lines.push('  • '+name+': ₪'+amount.toLocaleString('he-IL')+' ('+pct+'%)');
     }
   } else {
@@ -1831,7 +1829,7 @@ style={{width:18,height:18,borderRadius:"50%",background:c,border:editNote.color
 <div style={cardStyle}>
 <div style={{fontWeight:800,fontSize:14,marginBottom:12,color:theme.primary}}>📲 טלגרם</div>
 <div style={{fontSize:12,color:theme.subText,marginBottom:12}}>שלח דוח שבועי לקבוצת הוואצאפ כעת</div>
-<button onClick={()=>sendWeeklyReport(state.expenses||[],state.variableBuckets||[])} style={{width:"100%",background:theme.primary,color:"#fff",border:"none",borderRadius:10,padding:"11px",fontSize:13,fontWeight:800,cursor:"pointer"}}>📊 שלח דוח שבועי לטלגרם</button>
+<button onClick={()=>sendWeeklyReport(state.expenses||[],state.variableBuckets||[],weeklyVariableBudget)} style={{width:"100%",background:theme.primary,color:"#fff",border:"none",borderRadius:10,padding:"11px",fontSize:13,fontWeight:800,cursor:"pointer"}}>📊 שלח דוח שבועי לטלגרם</button>
 </div>
 <div style={cardStyle}>
 <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>💰 מקורות הכנסה</div>
