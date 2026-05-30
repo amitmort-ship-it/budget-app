@@ -419,9 +419,10 @@ const pastCycleWeekIds = allCycleWeekIds.filter(w => w < currentWeekId);
 const spentInPastCycleWeeks = pastCycleWeekIds.reduce((total, wid) => {
 return total + data.expenses.filter(e => getWeekId(e.date)===wid && inCurrentCycle(e.date) && variableBucketIds.has(e.bucketId) && !trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
 }, 0);
-// Dynamic weekly budget = (remaining variable budget) / days left in cycle x days in current week
-// "remaining" = monthly budget minus already spent in past completed weeks of this cycle
-const remainingVarBudget = Math.max(0, totalVariableOnBudget - spentInPastCycleWeeks);
+// Dynamic weekly budget = remaining variable budget / days left in cycle x days in current week
+// "remaining" = monthly non-tracking variable budget minus ALL non-tracking variable expenses this cycle
+const allCycleNonTrackingSpent = data.expenses.filter(e => inCurrentCycle(e.date) && variableBucketIds.has(e.bucketId) && !trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
+const remainingVarBudget = Math.max(0, totalVariableOnBudget - allCycleNonTrackingSpent);
 const daysLeftInCycle = Math.max(1, Math.round((cycleEnd - today) / 86400000) + 1);
 const dailyBudgetRate = remainingVarBudget / daysLeftInCycle;
 // Current week boundaries (Sun-Sat)
