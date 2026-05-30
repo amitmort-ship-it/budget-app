@@ -435,14 +435,14 @@ const daysInWeek = Math.max(1, Math.round((weekBudgetEnd - weekBudgetStart) / 86
 const dynamicWeeklyBudget = Math.round(dailyBudgetRate * daysInWeek);
 const weeksRemainingInCycle = allCycleWeekIds.filter(w => w >= currentWeekId).length;
 const weeklyFixedOverflowPenalty = fixedOverflowThisMonth / Math.max(1, weeksRemainingInCycle);
-// For a selected past week: proportional share based on days in cycle
+// Budget per week = dailyBudgetRate x days of that week within the cycle
 const getWeekBudget = (weekId) => {
-if (weekId >= currentWeekId) return dynamicWeeklyBudget;
-const wStart = new Date(weekId); const wEnd = new Date(weekId); wEnd.setDate(wEnd.getDate()+6);
-const overlapStart = wStart < cycleStart ? cycleStart : wStart;
-const overlapEnd = wEnd > cycleEnd ? cycleEnd : wEnd;
-const daysInCycle = Math.max(0, (overlapEnd - overlapStart) / 86400000 + 1);
-return totalVariableOnBudget * (daysInCycle / cycleTotalDays);
+const wSun = new Date(weekId); wSun.setHours(0,0,0,0);
+const wSat = new Date(wSun); wSat.setDate(wSun.getDate()+6); wSat.setHours(23,59,59,999);
+const overlapStart = wSun < cycleStart ? cycleStart : wSun;
+const overlapEnd = wSat > cycleEnd ? cycleEnd : wSat;
+const daysOverlap = Math.max(0, Math.round((overlapEnd - overlapStart) / 86400000) + 1);
+return Math.round(dailyBudgetRate * daysOverlap);
 };
 const weeklyVariableBudget = getWeekBudget(selectedWeek);
 
