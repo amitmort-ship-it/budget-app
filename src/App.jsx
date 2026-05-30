@@ -419,16 +419,19 @@ const pastCycleWeekIds = allCycleWeekIds.filter(w => w < currentWeekId);
 const spentInPastCycleWeeks = pastCycleWeekIds.reduce((total, wid) => {
 return total + data.expenses.filter(e => getWeekId(e.date)===wid && inCurrentCycle(e.date) && variableBucketIds.has(e.bucketId) && !trackingOnlyIds.has(e.bucketId)).reduce((s,e)=>s+Number(e.amount||0),0);
 }, 0);
-// Daily budget rate = monthly variable budget / days remaining in cycle
+// Dynamic weekly budget = (remaining variable budget) / days left in cycle x days in current week
+// "remaining" = monthly budget minus already spent in past completed weeks of this cycle
+const remainingVarBudget = Math.max(0, totalVariableOnBudget - spentInPastCycleWeeks);
 const daysLeftInCycle = Math.max(1, Math.round((cycleEnd - today) / 86400000) + 1);
-const dailyBudgetRate = totalVariableOnBudget / daysLeftInCycle;
+const dailyBudgetRate = remainingVarBudget / daysLeftInCycle;
 // Current week boundaries (Sun-Sat)
 const currentWeekSun = new Date(today); currentWeekSun.setDate(today.getDate() - today.getDay()); currentWeekSun.setHours(0,0,0,0);
 const currentWeekSat = new Date(currentWeekSun); currentWeekSat.setDate(currentWeekSun.getDate() + 6); currentWeekSat.setHours(23,59,59,999);
-// Days of current week that overlap with [today, cycleEnd]
+// Total days of current week within cycle (measured from week start, not from today)
+const weekBudgetStart = currentWeekSun < cycleStart ? cycleStart : currentWeekSun;
 const weekBudgetEnd = currentWeekSat > cycleEnd ? cycleEnd : currentWeekSat;
-const daysThisWeek = Math.max(1, Math.round((weekBudgetEnd - today) / 86400000) + 1);
-const dynamicWeeklyBudget = Math.round(dailyBudgetRate * daysThisWeek);
+const daysInWeek = Math.max(1, Math.round((weekBudgetEnd - weekBudgetStart) / 86400000) + 1);
+const dynamicWeeklyBudget = Math.round(dailyBudgetRate * daysInWeek);
 const weeksRemainingInCycle = allCycleWeekIds.filter(w => w >= currentWeekId).length;
 const weeklyFixedOverflowPenalty = fixedOverflowThisMonth / Math.max(1, weeksRemainingInCycle);
 // For a selected past week: proportional share based on days in cycle
