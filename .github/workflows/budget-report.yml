@@ -65,13 +65,12 @@ jobs:
             const expenses = data.expenses || [];
             const varBuckets = data.variableBuckets || [];
 
-            // Weekly budget = monthly variable budget / 4.33
-            const varBudgetMonthly = varBuckets.reduce((s, b) => s + Number(b.amount || 0), 0);
-            const weeklyBudget = Math.round(varBudgetMonthly / 4.33);
+            // Weekly variable budget = monthly variable / 4.33 (approx)
+            const varMonthly = varBuckets.reduce((s, b) => s + Number(b.amount || 0), 0);
+            const weeklyBudget = Math.round(varMonthly / 4.33);
 
-            // This week = last 7 days (Sun-Sat or rolling 7 days)
-            // Use start of current week (Sunday)
-            const todayDay = now.getDay(); // 0=Sun
+            // Current week: Sunday to Saturday
+            const todayDay = now.getDay();
             const weekStart = new Date(now);
             weekStart.setDate(now.getDate() - todayDay);
             weekStart.setHours(0, 0, 0, 0);
@@ -79,25 +78,23 @@ jobs:
             weekEnd.setDate(weekStart.getDate() + 6);
             weekEnd.setHours(23, 59, 59, 999);
 
-            // Filter expenses this week that are variable (not fixed)
-            const weekExpenses = expenses.filter(e => {
+            // Only variable expenses this week
+            const weekExp = expenses.filter(e => {
               const ed = new Date(e.date || e.createdAt);
               return ed >= weekStart && ed <= weekEnd && varBuckets.find(b => b.id === e.bucketId);
             });
 
-            const weekSpent = weekExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+            const weekSpent = weekExp.reduce((s, e) => s + Number(e.amount || 0), 0);
             const weekLeft = weeklyBudget - weekSpent;
 
-            // Group by category (bucket)
+            // Group by category
             const byBucket = {};
-            for (const e of weekExpenses) {
+            for (const e of weekExp) {
               const bucket = varBuckets.find(b => b.id === e.bucketId);
               const name = bucket ? bucket.name : 'אחר';
               byBucket[name] = (byBucket[name] || 0) + Number(e.amount || 0);
             }
-
-            // Sort by amount desc
-            const sortedBuckets = Object.entries(byBucket).sort((a, b) => b[1] - a[1]);
+            const sorted = Object.entries(byBucket).sort((a, b) => b[1] - a[1]);
 
             const weekStartStr = weekStart.toLocaleDateString('he-IL');
             const weekEndStr = weekEnd.toLocaleDateString('he-IL');
@@ -114,10 +111,10 @@ jobs:
               ''
             ];
 
-            if (sortedBuckets.length > 0) {
+            if (sorted.length > 0) {
               lines.push('📊 הוצאות לפי קטגוריה:');
-              for (const [name, amount] of sortedBuckets) {
-                const pct = Math.round((amount / weekSpent) * 100);
+              for (const [name, amount] of sorted) {
+                const pct = weekSpent > 0 ? Math.round((amount / weekSpent) * 100) : 0;
                 lines.push('  • ' + name + ': ₪' + amount.toLocaleString('he-IL') + ' (' + pct + '%)');
               }
             } else {
