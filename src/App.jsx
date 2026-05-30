@@ -488,10 +488,8 @@ const storedMap = data.weekBudgetMap || {};
 const isSunday = today.getDay() === 0;
 const mapHasCurrentWeek = storedMap[currentWeekId] !== undefined;
 // Use stored map if available and not Sunday (stable), else use computed
-// Recompute if: it's Sunday, map missing current week, OR current week budget is 0 (stale/wrong)
-const mapCurrentWeekBudget = storedMap[currentWeekId];
-const mapIsStale = mapCurrentWeekBudget === undefined || mapCurrentWeekBudget === 0;
-const activeBudgetMap = (!isSunday && !mapIsStale) ? storedMap : computeWeekBudgetMap(data.expenses, data.variableBuckets, cycleStart, cycleEnd);
+// Always compute fresh budget map (stored map used for stability only after saving)
+const activeBudgetMap = computeWeekBudgetMap(data.expenses, data.variableBuckets, cycleStart, cycleEnd);
 const dynamicWeeklyBudget = activeBudgetMap[currentWeekId] || 0;
 const weeksRemainingInCycle = allCycleWeekIds.filter(w => w >= currentWeekId).length;
 const weeklyFixedOverflowPenalty = fixedOverflowThisMonth / Math.max(1, weeksRemainingInCycle);
