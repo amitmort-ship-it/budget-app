@@ -429,6 +429,7 @@ const currentWeekSat = new Date(currentWeekSun); currentWeekSat.setDate(currentW
 const weekBudgetEnd = currentWeekSat > cycleEnd ? cycleEnd : currentWeekSat;
 const daysThisWeek = Math.max(1, Math.round((weekBudgetEnd - today) / 86400000) + 1);
 const dynamicWeeklyBudget = Math.round(dailyBudgetRate * daysThisWeek);
+const weeksRemainingInCycle = allCycleWeekIds.filter(w => w >= currentWeekId).length;
 const weeklyFixedOverflowPenalty = fixedOverflowThisMonth / Math.max(1, weeksRemainingInCycle);
 // For a selected past week: proportional share based on days in cycle
 const getWeekBudget = (weekId) => {
