@@ -902,6 +902,7 @@ const cardStyle = { background:"#fff", borderRadius:14, padding:"14px 16px", mar
 const TW=56,TH=220,tx=8,tw=40,topY=18,botY=192,rx=20;
 const tubePath=`M ${tx} ${topY} L ${tx} ${botY-rx} Q ${tx} ${botY} ${tx+rx} ${botY} L ${tx+tw-rx} ${botY} Q ${tx+tw} ${botY} ${tx+tw} ${botY-rx} L ${tx+tw} ${topY}`;
 const tubeClipPath=tubePath+` Z`;
+const DAY_LABELS=["א","ב","ג","ד","ה","ו","ש"];
 const Tube=({fillPct,gradA,gradB,label,title,sub,extra,showDots})=>{
 const clamp=Math.min(1,Math.max(0,fillPct));
 const fillableH=botY-topY; const liquidY=botY-clamp*fillableH;
@@ -1090,7 +1091,6 @@ const _weekEffDays=Math.round((_weekLastDay-_weekSun)/86400000)+1;
 const weekFillPct=(_weekEffDays-daysPassed)/_weekEffDays;
 const budgetFillPct=weeklyVariableBudget>0?Math.max(0,leftThisWeek/weeklyVariableBudget):0;
 const budgetOver=leftThisWeek<0;
-const DAY_LABELS=["א","ב","ג","ד","ה","ו","ש"];
 const statusMsg=budgetOver?{text:`חרגת ₪${Math.abs(Math.round(leftThisWeek)).toLocaleString("he-IL")}`,color:"#B05858",bg:"#FAF0F0"}:weekFillPct>budgetFillPct+0.15?{text:"הימים רצים מהתקציב",color:"#9a7020",bg:"#fdf8ec"}:{text:"אתה בקצב טוב ✓",color:"#3d7a55",bg:"#edf7f1"};
 return (
 <div style={{...cardStyle,marginBottom:16,background:"#f8fbff",border:"1px solid #e0e8f0"}}>
