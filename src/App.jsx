@@ -903,6 +903,7 @@ const TW=56,TH=220,tx=8,tw=40,topY=18,botY=192,rx=20;
 const tubePath=`M ${tx} ${topY} L ${tx} ${botY-rx} Q ${tx} ${botY} ${tx+rx} ${botY} L ${tx+tw-rx} ${botY} Q ${tx+tw} ${botY} ${tx+tw} ${botY-rx} L ${tx+tw} ${topY}`;
 const tubeClipPath=tubePath+` Z`;
 const DAY_LABELS=["א","ב","ג","ד","ה","ו","ש"];
+const dayOfWeek=new Date().getDay();const daysPassed=dayOfWeek;
 const Tube=({fillPct,gradA,gradB,label,title,sub,extra,showDots})=>{
 const clamp=Math.min(1,Math.max(0,fillPct));
 const fillableH=botY-topY; const liquidY=botY-clamp*fillableH;
