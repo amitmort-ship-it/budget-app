@@ -1561,8 +1561,8 @@ return (
   gradA={_budgetOver?"#c0392b":"#27ae60"}
   gradB={_budgetOver?"#922b21":"#1e8449"}
   label="budget"
-  title={"₪"+spentThisCycle.toLocaleString("he-IL")}
-  sub={_budgetOver?"חריגה!":"נוצל מתקציב"}
+  title={_budgetOver?"חריגה! ₪"+(spentThisCycle-_allVarBudget).toLocaleString("he-IL"):"₪"+(Math.max(0,_allVarBudget-spentThisCycle)).toLocaleString("he-IL")}
+  sub={_budgetOver?"מעל התקציב":"נשאר בתקציב"}
   extra={"מתוך ₪"+_allVarBudget.toLocaleString("he-IL")}
   showDots={false}
 />
