@@ -1533,6 +1533,41 @@ onKeyDown={e=>e.key==="Enter"&&updateSnapshotBalance(item.id,e.target.value)}/>
 <>
 <div style={{fontSize:15,fontWeight:700,marginBottom:14}}>📈 ניתוח</div>
 
+{/* Monthly cycle tubes */}
+{(()=>{
+const _allVarBudget=data.variableBuckets.reduce((s,b)=>s+Number(b.amount||0),0);
+const _cyclePct=cycleTotalDays>0?Math.min(1,daysElapsed/cycleTotalDays):0;
+const _budgetPct=_allVarBudget>0?Math.min(1,spentThisCycle/_allVarBudget):0;
+const _budgetOver=spentThisCycle>_allVarBudget;
+return (
+<div style={{display:"flex",gap:12,marginBottom:16}}>
+<div style={{flex:1}}>
+<Tube
+  fillPct={1-_cyclePct}
+  gradA="#4a90d9"
+  gradB="#1a5fa8"
+  label="days"
+  title={String(daysLeft)}
+  sub={"ימים נותרו"}
+  extra={"מתוך "+cycleTotalDays}
+  showDots={false}
+/>
+</div>
+<div style={{flex:1}}>
+<Tube
+  fillPct={_budgetOver?1:1-_budgetPct}
+  gradA={_budgetOver?"#c0392b":"#27ae60"}
+  gradB={_budgetOver?"#922b21":"#1e8449"}
+  label="budget"
+  title={"₪"+spentThisCycle.toLocaleString("he-IL")}
+  sub={_budgetOver?"חריגה!":"נוצל מתקציב"}
+  extra={"מתוך ₪"+_allVarBudget.toLocaleString("he-IL")}
+  showDots={false}
+/>
+</div>
+</div>
+);
+})()}
 {/* Projection — now includes tracking-only buckets in budget */}
 <div style={{background:`linear-gradient(135deg,${theme.a},${theme.b})`,borderRadius:16,padding:"18px 20px",marginBottom:16,color:"#fff"}}>
 <div style={{fontSize:12,opacity:.85,marginBottom:4}}>💰 חיסכון צפוי החודש</div>
