@@ -1000,7 +1000,13 @@ style={{ background:"rgba(255,255,255,.25)", border:"none", color:"#fff", border
 {(()=>{
 const todayD=new Date(); todayD.setHours(0,0,0,0);
 const dayOfWeek=todayD.getDay(); const daysPassed=dayOfWeek;
-const weekFillPct=(7-daysPassed)/7;
+// Days tube: respect cycle boundary if cycle ends mid-week
+const _weekSun=new Date(todayD); _weekSun.setDate(todayD.getDate()-dayOfWeek);
+const _weekSat=new Date(_weekSun); _weekSat.setDate(_weekSun.getDate()+6); _weekSat.setHours(23,59,59,999);
+const _cycleEndNorm=new Date(cycleEnd); _cycleEndNorm.setHours(23,59,59,999);
+const _weekLastDay=_cycleEndNorm<_weekSat?_cycleEndNorm:_weekSat;
+const _weekEffDays=Math.round((_weekLastDay-_weekSun)/86400000)+1;
+const weekFillPct=(_weekEffDays-daysPassed)/_weekEffDays;
 const budgetFillPct=weeklyVariableBudget>0?Math.max(0,leftThisWeek/weeklyVariableBudget):0;
 const budgetOver=leftThisWeek<0;
 const DAY_LABELS=["א","ב","ג","ד","ה","ו","ש"];
