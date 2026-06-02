@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" width="140" height="140">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2d4a6b"/>
+      <stop offset="100%" stop-color="#1e3a5f"/>
+    </radialGradient>
+    <linearGradient id="vg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#63b3ed"/>
+      <stop offset="100%" stop-color="#4299e1"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="70" cy="70" r="70" fill="url(#bg)"/>
+  <!-- Outer ring -->
+  <circle cx="70" cy="70" r="62" fill="none" stroke="#4a6fa5" stroke-width="4"/>
+  <!-- Dashed ring -->
+  <circle cx="70" cy="70" r="62" fill="none" stroke="url(#vg)" stroke-width="3" stroke-dasharray="10 6"/>
+  <!-- Main vault body -->
+  <circle cx="70" cy="70" r="50" fill="#2d3748"/>
+  <circle cx="70" cy="70" r="50" fill="none" stroke="#4a5568" stroke-width="2"/>
+  <!-- Inner dial ring -->
+  <circle cx="70" cy="70" r="30" fill="none" stroke="#718096" stroke-width="4"/>
+  <circle cx="70" cy="70" r="30" fill="none" stroke="#bee3f8" stroke-width="1.5" stroke-dasharray="8 4"/>
+  <!-- Dial markers (6 dots around the ring) -->
+  <circle cx="70" cy="40" r="4" fill="#9bb5cc"/>
+  <circle cx="96" cy="55" r="4" fill="#9bb5cc"/>
+  <circle cx="96" cy="85" r="4" fill="#9bb5cc"/>
+  <circle cx="70" cy="100" r="4" fill="#9bb5cc"/>
+  <circle cx="44" cy="85" r="4" fill="#9bb5cc"/>
+  <circle cx="44" cy="55" r="4" fill="#9bb5cc"/>
+  <!-- Center glow -->
+  <circle cx="70" cy="70" r="14" fill="#2b6cb0"/>
+  <circle cx="70" cy="70" r="10" fill="#63b3ed"/>
+  <circle cx="70" cy="70" r="6" fill="#bee3f8"/>
+  <!-- Handle / spoke -->
+  <line x1="70" y1="70" x2="70" y2="42" stroke="#9bb5cc" stroke-width="3" stroke-linecap="round"/>
+</svg>
