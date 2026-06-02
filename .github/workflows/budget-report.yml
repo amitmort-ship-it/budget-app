@@ -73,8 +73,8 @@ jobs:
             const dailyBudget = varMonthly / daysLeft;
             const currentWeekSun = new Date(today); currentWeekSun.setDate(today.getDate() - today.getDay());
             const currentWeekSat = new Date(currentWeekSun); currentWeekSat.setDate(currentWeekSun.getDate() + 6); currentWeekSat.setHours(23,59,59,999);
-            const weekEnd = currentWeekSat > cycleEnd ? cycleEnd : currentWeekSat;
-            const daysThisWeek = Math.max(1, Math.round((weekEnd - today) / 86400000) + 1);
+            const weekBudgetEnd = currentWeekSat > cycleEnd ? cycleEnd : currentWeekSat;
+            const daysThisWeek = Math.max(1, Math.round((weekBudgetEnd - today) / 86400000) + 1);
             const weeklyBudget = Math.round(dailyBudget * daysThisWeek);
 
             // Current week: Sunday to Saturday
