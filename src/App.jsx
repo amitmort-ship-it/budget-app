@@ -153,6 +153,7 @@ weekBudgetMap: {},
 theme: "pastel",
 notes: [],
 savingsSnapshot: [],
+savingsHistory: [],
 };
 
 // ── PASTEL THEMES ──────────────────────────────────────────────────────────
@@ -664,6 +665,19 @@ save({ ...data, savingsSnapshot:(data.savingsSnapshot||[]).map(x=>x.id===id?{...
 setEditSnapshotId(null);
 };
 const deleteSnapshotItem = (id) => save({ ...data, savingsSnapshot:(data.savingsSnapshot||[]).filter(x=>x.id!==id) });
+const takeSnapshot = () => {
+  const items = data.savingsSnapshot || [];
+  if (items.length === 0) return showToast("אין מוצרים להצמדה", "#e07070");
+  const snapshot = {
+    id: uid(),
+    date: new Date().toISOString().slice(0, 10),
+    timestamp: Date.now(),
+    items: items.map(item => ({ id: item.id, name: item.name, channel: item.channel, balance: Number(item.balance) })),
+    total: items.reduce((s, i) => s + Number(i.balance), 0),
+  };
+  save({ ...data, savingsHistory: [...(data.savingsHistory || []), snapshot] });
+  showToast("מצב נשמר ✓ 📸");
+};
 const totalSnapshotBalance = (data.savingsSnapshot||[]).reduce((s,x)=>s+Number(x.balance||0),0);
 
 const addNote = () => {
@@ -1428,7 +1442,7 @@ style={{flex:1,background:(newBucket.isInstallment===isInst&&newBucket.isRecurri
 </div>
 </div>
 <div style={{display:"flex",gap:8,marginBottom:16}}>
-{[["deposits","💰 הפקדות"],["snapshot","📸 מצב חסכונות"]].map(([t,label])=>(
+{[["deposits","💰 הפקדות"],["snapshot","📸 מצב חסכונות"],["history","📊 היסטוריה"]].map(([t,label])=>(
 <button key={t} onClick={()=>setSavingsTab(t)}
 style={{flex:1,background:savingsTab===t?theme.savingsB:"#f1f5f9",color:savingsTab===t?"#fff":"#6b7a8d",border:"none",borderRadius:10,padding:"10px",fontSize:12,fontWeight:700,cursor:"pointer",transition:"all .2s"}}>
 {label}
@@ -1482,7 +1496,10 @@ return (<div key={s.id} style={{background:"#fff",borderRadius:12,padding:"12px 
 </div>
 </>}
 {savingsTab==="snapshot" && <>
-<div style={{fontSize:12,color:"#94a3b8",marginBottom:12,textAlign:"center"}}>רשום את היתרה הנוכחית בכל מוצר חסכון</div>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<div style={{fontSize:12,color:"#94a3b8"}}>רשום את היתרה הנוכחית בכל מוצר חסכון</div>
+<button onClick={takeSnapshot} style={{background:"linear-gradient(135deg,#82B89A,#5fa085)",color:"#fff",border:"none",borderRadius:10,padding:"8px 14px",fontSize:12,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>📸 צלם מצב</button>
+</div>
 {(data.savingsSnapshot||[]).length===0&&<div style={{textAlign:"center",color:"#94a3b8",fontSize:13,padding:20}}>אין מוצרי חסכון עדיין</div>}
 {(data.savingsSnapshot||[]).map(item=>{
 const ch=SAVING_CHANNELS.find(c=>c.id===item.channel)||SAVING_CHANNELS[6];
@@ -1528,6 +1545,113 @@ onKeyDown={e=>e.key==="Enter"&&updateSnapshotBalance(item.id,e.target.value)}/>
 <button onClick={addSnapshotItem} style={{width:"100%",background:theme.savingsB,color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:13,fontWeight:700,cursor:"pointer"}}>הוסף מוצר</button>
 </div>
 </>}
+
+{savingsTab==="history" && <>{(() => {
+  const history = (data.savingsHistory || []).sort((a,b) => a.timestamp - b.timestamp);
+  if (history.length === 0) return (
+    <div style={{textAlign:"center",padding:40,color:"#94a3b8"}}>
+      <div style={{fontSize:40,marginBottom:12}}>📸</div>
+      <div style={{fontSize:14,fontWeight:600,marginBottom:6}}>אין נתונים היסטוריים עדיין</div>
+      <div style={{fontSize:12}}>לחץ על "צלם מצב" בלשונית מצב חסכונות</div>
+    </div>
+  );
+  const allItems = {};
+  history.forEach(snap => snap.items.forEach(item => { allItems[item.id] = item.name; }));
+  const itemIds = Object.keys(allItems);
+  const COLORS = ["#82B89A","#7BA7BC","#C5B8E0","#F4A460","#87CEEB","#DDA0DD","#98FB98","#F0E68C","#FF7F7F","#20B2AA","#9370DB"];
+  const barW = Math.min(40, Math.floor(60 * 0.7));
+  const maxTotal = Math.max(...history.map(s => s.total), 1);
+  const chartH = 180;
+  const chartW = Math.max(history.length * 60, 280);
+  return (
+    <div>
+      <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>📊 היסטוריית מצב חסכונות</div>
+      <div style={{fontSize:12,color:"#94a3b8",marginBottom:16}}>{history.length} צילומים</div>
+      <div style={{background:"#fff",borderRadius:12,padding:"14px",marginBottom:12,boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
+        <div style={{fontSize:12,fontWeight:700,marginBottom:8,color:"#5a7080"}}>סה"כ תיק לאורך זמן</div>
+        <div style={{overflowX:"auto"}}>
+          <svg width={Math.max(chartW + 40, 280)} height={chartH + 60} style={{display:"block"}}>
+            {history.map((snap, si) => {
+              const x = 30 + si * (chartW / Math.max(history.length - 1, 1));
+              const y = chartH - (snap.total / maxTotal) * (chartH - 20) + 10;
+              return (
+                <g key={snap.id}>
+                  {si > 0 && (() => {
+                    const prevSnap = history[si - 1];
+                    const px = 30 + (si-1) * (chartW / Math.max(history.length - 1, 1));
+                    const py = chartH - (prevSnap.total / maxTotal) * (chartH - 20) + 10;
+                    return <line x1={px} y1={py} x2={x} y2={y} stroke="#82B89A" strokeWidth={2.5}/>;
+                  })()}
+                  <circle cx={x} cy={y} r={5} fill="#82B89A" stroke="#fff" strokeWidth={2}/>
+                  <text x={x} y={chartH + 30} textAnchor="middle" fontSize={9} fill="#94a3b8" transform={"rotate(-35," + x + "," + (chartH+30) + ")"}>
+                    {snap.date.slice(5)}
+                  </text>
+                  <text x={x} y={y - 10} textAnchor="middle" fontSize={9} fill="#5a7080" fontWeight="bold">
+                    {"₪" + Math.round(snap.total / 1000) + "K"}
+                  </text>
+                </g>
+              );
+            })}
+            <line x1={25} y1={10} x2={25} y2={chartH + 5} stroke="#e2e8f0" strokeWidth={1}/>
+            <line x1={25} y1={chartH + 5} x2={chartW + 40} y2={chartH + 5} stroke="#e2e8f0" strokeWidth={1}/>
+          </svg>
+        </div>
+      </div>
+      {itemIds.length > 0 && (
+        <div style={{background:"#fff",borderRadius:12,padding:"14px",marginBottom:12,boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
+          <div style={{fontSize:12,fontWeight:700,marginBottom:8,color:"#5a7080"}}>שינוי לפי מוצר</div>
+          <div style={{overflowX:"auto"}}>
+            <svg width={Math.max(history.length * 70 + 40, 280)} height={220} style={{display:"block"}}>
+              {history.map((snap, si) => {
+                const x = 30 + si * 70;
+                let stackY = 200;
+                return snap.items.map((item, ii) => {
+                  const color = COLORS[itemIds.indexOf(item.id) % COLORS.length];
+                  const maxSnap = Math.max(...history.map(s => s.total), 1);
+                  const bh = Math.max((item.balance / maxSnap) * 170, 2);
+                  stackY -= bh;
+                  return <rect key={item.id + si} x={x - barW/2} y={stackY} width={barW} height={bh} fill={color} rx={2} opacity={0.85}/>;
+                });
+              })}
+              {history.map((snap, si) => {
+                const x = 30 + si * 70;
+                return <text key={snap.id + "label"} x={x} y={215} textAnchor="middle" fontSize={9} fill="#94a3b8" transform={"rotate(-35," + x + ",215)"}>
+                  {snap.date.slice(5)}
+                </text>;
+              })}
+              <line x1={25} y1={5} x2={25} y2={205} stroke="#e2e8f0" strokeWidth={1}/>
+              <line x1={25} y1={205} x2={Math.max(history.length * 70 + 40, 280) - 5} y2={205} stroke="#e2e8f0" strokeWidth={1}/>
+            </svg>
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}>
+            {itemIds.map((id, i) => (
+              <div key={id} style={{display:"flex",alignItems:"center",gap:4,fontSize:10}}>
+                <div style={{width:10,height:10,borderRadius:2,background:COLORS[i % COLORS.length]}}/>
+                <span style={{color:"#5a7080"}}>{allItems[id]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <div style={{background:"#fff",borderRadius:12,padding:"14px",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
+        <div style={{fontSize:12,fontWeight:700,marginBottom:8,color:"#5a7080"}}>רשימת צילומים</div>
+        {[...history].reverse().map(snap => (
+          <div key={snap.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #f1f5f9"}}>
+            <div>
+              <div style={{fontSize:12,fontWeight:600}}>{snap.date}</div>
+              <div style={{fontSize:10,color:"#94a3b8"}}>{snap.items.length} מוצרים</div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:13,fontWeight:700,color:"#82B89A"}}>₪{snap.total.toLocaleString("he-IL")}</span>
+              <button onClick={() => save({ ...data, savingsHistory: (data.savingsHistory||[]).filter(h => h.id !== snap.id) })}
+                style={{background:"#fdf0f0",border:"none",color:"#e07070",borderRadius:6,padding:"3px 7px",fontSize:11,cursor:"pointer"}}>✕</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+})()}</>}
 </>
 )}
 {/* ── ANALYTICS ── */}
