@@ -320,6 +320,42 @@ function computeWeekBudgetMap(expensesArr, variableBucketsArr, cycleS, cycleE) {
   return map;
 }
 
+// ── Effective bucket budgets: overflow from exceeded buckets is distributed equally among remaining non-exceeded buckets ──
+function computeEffectiveBucketBudgets(expenses, variableBuckets, cycleStart, cycleEnd) {
+  const bucketsOnBudget = variableBuckets.filter(b => !b.trackingOnly);
+  const bucketData = bucketsOnBudget.map(b => {
+    const spent = expenses.filter(e => {
+      const d = new Date(e.date); d.setHours(0,0,0,0);
+      return d >= cycleStart && d <= cycleEnd && e.bucketId === b.id;
+    }).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const budget = Number(b.amount || 0);
+    const overflow = Math.max(0, spent - budget);
+    const remaining = Math.max(0, budget - spent);
+    return { id: b.id, budget, spent, overflow, remaining };
+  });
+  const totalOverflow = bucketData.reduce((s, b) => s + b.overflow, 0);
+  if (totalOverflow === 0) {
+    const result = {};
+    bucketData.forEach(b => { result[b.id] = b.budget; });
+    return result;
+  }
+  const bucketsWithRemaining = bucketData.filter(b => b.remaining > 0);
+  const totalRemaining = bucketsWithRemaining.reduce((s, b) => s + b.remaining, 0);
+  const result = {};
+  bucketData.forEach(b => {
+    if (b.overflow > 0 || b.remaining === 0) {
+      result[b.id] = Math.max(b.budget, b.spent);
+    } else if (totalRemaining > 0) {
+      const share = (b.remaining / totalRemaining) * totalOverflow;
+      result[b.id] = Math.max(b.spent, b.budget - share);
+    } else {
+      result[b.id] = b.budget;
+    }
+  });
+  return result;
+}
+
+
 export default function App() {
 const [data, setData] = useState(() => {
 try {
@@ -1254,7 +1290,7 @@ return (
 <div style={{color:theme.varSub,marginTop:2}}>תקציב שבועי: ₪{weeklyVariableBudget.toLocaleString("he-IL",{maximumFractionDigits:0})}</div>
 </div>
 {data.variableBuckets.map(b=>{
-const wB=Number(b.amount)/weeksInMonth; const spent=bucketSpendThisWeek(b.id); const isEditing=editBucket?.id===b.id;
+const _monthlyBudget=Number(b.amount); const _effBudgets=computeEffectiveBucketBudgets(data.expenses,data.variableBuckets,cycleStart,cycleEnd); const effectiveMonthly=b.trackingOnly?_monthlyBudget:(_effBudgets[b.id]??_monthlyBudget); const wB=effectiveMonthly/weeksInMonth; const spent=bucketSpendThisWeek(b.id); const isEditing=editBucket?.id===b.id;
 return (
 <div key={b.id} draggable={!isEditing} onDragStart={()=>{dragItem.current=data.variableBuckets.indexOf(b);}} onDragEnter={()=>{dragOver.current=data.variableBuckets.indexOf(b);}} onDragEnd={()=>reorderBuckets("variable")} onDragOver={e=>e.preventDefault()}
 style={{...cardStyle,border:isEditing?`2px solid ${theme.btn}`:"2px solid transparent",cursor:isEditing?"default":"grab",userSelect:"none"}}>
@@ -1290,7 +1326,7 @@ style={{...cardStyle,border:isEditing?`2px solid ${theme.btn}`:"2px solid transp
 <button onClick={()=>setEditBucket({...b,type:"variable"})} style={{background:theme.btnLight,border:"none",color:theme.btn,borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600}}>✏️ ערוך</button>
 </div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,fontSize:12}}>
-{[{l:"חודשי",v:`₪${Number(b.amount).toLocaleString("he-IL")}`,c:theme.acc},{l:"שבועי",v:`₪${wB.toLocaleString("he-IL",{maximumFractionDigits:0})}`,c:"#8b6fc7"},{l:"הוצאה",v:`₪${spent.toLocaleString("he-IL")}`,c:spent>wB?"#e07070":"#6bbf8e"}].map(x=>(
+{[{l:"חודשי",v:`₪${Math.round(effectiveMonthly).toLocaleString("he-IL")}${effectiveMonthly<_monthlyBudget?" ↓":""}`,c:effectiveMonthly<_monthlyBudget?"#C9A96E":theme.acc},{l:"שבועי",v:`₪${wB.toLocaleString("he-IL",{maximumFractionDigits:0})}`,c:"#8b6fc7"},{l:"הוצאה",v:`₪${spent.toLocaleString("he-IL")}`,c:spent>wB?"#e07070":"#6bbf8e"}].map(x=>(
 <div key={x.l} style={{background:"#f4f7fb",borderRadius:8,padding:"8px 6px",textAlign:"center"}}>
 <div style={{color:"#94a3b8",marginBottom:2}}>{x.l}</div>
 <div style={{fontWeight:700,color:x.c}}>{x.v}</div>
