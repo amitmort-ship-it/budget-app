@@ -64,18 +64,17 @@ jobs:
 
             const expenses = data.expenses || [];
             const varBuckets = data.variableBuckets || [];
+            const weekBudgetMap = data.weekBudgetMap || {};
 
-            // Weekly budget = (monthly non-tracking variable) / daysLeft * daysThisWeekInCycle
-            const varMonthly = varBuckets.filter(b => !b.trackingOnly).reduce((s, b) => s + Number(b.amount || 0), 0);
-            const today = new Date(); today.setHours(0,0,0,0);
-            const cycleEnd = new Date(today); if(today.getDate() >= 10) { cycleEnd.setMonth(cycleEnd.getMonth()+1); } cycleEnd.setDate(9); cycleEnd.setHours(23,59,59,999);
-            const daysLeft = Math.max(1, Math.round((cycleEnd - today) / 86400000) + 1);
-            const dailyBudget = varMonthly / daysLeft;
-            const currentWeekSun = new Date(today); currentWeekSun.setDate(today.getDate() - today.getDay());
-            const currentWeekSat = new Date(currentWeekSun); currentWeekSat.setDate(currentWeekSun.getDate() + 6); currentWeekSat.setHours(23,59,59,999);
-            const weekBudgetEnd = currentWeekSat > cycleEnd ? cycleEnd : currentWeekSat;
-            const daysThisWeek = Math.max(1, Math.round((weekBudgetEnd - today) / 86400000) + 1);
-            const weeklyBudget = Math.round(dailyBudget * daysThisWeek);
+            // Get week ID exactly as App.jsx does: ISO date of Sunday of current week
+            function getWeekId(d) {
+              const dt = new Date(d);
+              dt.setHours(0, 0, 0, 0);
+              dt.setDate(dt.getDate() - dt.getDay()); // rewind to Sunday
+              return dt.toISOString().slice(0, 10);
+            }
+            const weekId = getWeekId(now);
+            const weeklyBudget = weekBudgetMap[weekId] || 0;
 
             // Current week: Sunday to Saturday
             const todayDay = now.getDay();
@@ -115,7 +114,7 @@ jobs:
               '',
               '💰 תקציב שבועי: ₪' + weeklyBudget.toLocaleString('he-IL'),
               '💸 הוצאות שבוע זה: ₪' + weekSpent.toLocaleString('he-IL'),
-              ...(trackingSpent > 0 ? [`👁 מעקב בלבד (לא כלול בתקציב): ₪${trackingSpent.toLocaleString('he-IL')}`] : []),
+              ...(trackingSpent > 0 ? ['👁 מעקב בלבד (לא כלול בתקציב): ₪' + trackingSpent.toLocaleString('he-IL')] : []),
               weekLeft >= 0
                 ? '✅ נותר לשבוע: ₪' + weekLeft.toLocaleString('he-IL')
                 : '⚠️ חרגת מהתקציב ב: ₪' + Math.abs(weekLeft).toLocaleString('he-IL'),
@@ -126,7 +125,7 @@ jobs:
               lines.push('📊 הוצאות לפי קטגוריה:');
               for (const [name, amount] of sorted) {
                 const pct = weekSpent > 0 ? Math.round((amount / weekSpent) * 100) : 0;
-                lines.push('  • ' + name + ': ₪' + amount.toLocaleString('he-IL') + ' (' + pct + '%)');
+                lines.push(' • ' + name + ': ₪' + amount.toLocaleString('he-IL') + ' (' + pct + '%)');
               }
             } else {
               lines.push('🎉 אין הוצאות השבוע עד כאן!');
