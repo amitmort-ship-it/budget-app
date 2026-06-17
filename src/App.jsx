@@ -1158,7 +1158,7 @@ return (
 <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",paddingTop:90,gap:4,opacity:.25}}>
 <div style={{width:1,height:36,background:"#94a3b8"}}/><span style={{fontSize:9,fontWeight:800,color:"#94a3b8",letterSpacing:1}}>+</span><div style={{width:1,height:36,background:"#94a3b8"}}/>
 </div>
-<Tube label="free" fillPct={totalMonthlyIncome>0?Math.max(0,remaining)/totalMonthlyIncome:0} gradA="#a8d5e2" gradB="#5fa8b8" title="כסף פנוי" sub={`₪${Math.abs(Math.round(remaining)).toLocaleString("he-IL")}`} extra={remaining<0?"גירעון!":null}/>
+<Tube label="free" fillPct={totalMonthlyIncome>0?Math.max(0,totalMonthlyIncome-totalBudgetIncl)/totalMonthlyIncome:0} gradA="#a8d5e2" gradB="#5fa8b8" title="כסף פנוי" sub={`₪${Math.abs(Math.round(totalMonthlyIncome-totalBudgetIncl)).toLocaleString("he-IL")}`} extra={(totalMonthlyIncome-totalBudgetIncl)<0?"גירעון!":null}/>
 </div>
 {/* Redistribution is automatic — no manual button needed */}
 </div>
@@ -2256,7 +2256,7 @@ const setExp = editExpense ? (fn) => setEditExpense(prev => fn(prev)) : (fn) => 
 return (<>
 <select value={exp.bucketId} onChange={e=>setExp(p=>({...p,bucketId:e.target.value}))} style={{...inputStyle,width:"100%",marginBottom:10,boxSizing:"border-box",fontSize:14}}>
 <option value="">בחר קטגוריה</option>
-{remaining>0&&<option value="free_money">💚 כסף פנוי (₪{Math.round(remaining).toLocaleString("he-IL")})</option>}
+{(totalMonthlyIncome-totalBudgetIncl)>0&&<option value="free_money">💚 כסף פנוי (₪{Math.round(totalMonthlyIncome-totalBudgetIncl).toLocaleString("he-IL")})</option>}
 {data.variableBuckets.length>0&&<optgroup label="משתנות">{data.variableBuckets.map(b=><option key={b.id} value={b.id}>{ICONS[b.icon]} {b.name}</option>)}</optgroup>}
 {data.fixedBuckets.length>0&&<optgroup label="קבועות">{data.fixedBuckets.map(b=><option key={b.id} value={b.id}>{ICONS[b.icon]} {b.name}</option>)}</optgroup>}
 </select>
