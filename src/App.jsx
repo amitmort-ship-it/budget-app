@@ -1125,7 +1125,7 @@ style={{ background:"rgba(255,255,255,.25)", border:"none", color:"#fff", border
 {view==="dashboard" && (
 <>
 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:16 }}>
-{[{label:"הכנסה",val:totalMonthlyIncome,color:theme.incomeColor,bg:theme.light},{label:"תקציב",val:totalBudgetIncl,color:"#e8b87c",bg:"#fdf6e8"},{label:"עודף",val:totalMonthlyIncome-totalBudgetIncl,color:(totalMonthlyIncome-totalBudgetIncl)>=0?theme.acc:"#D07878",bg:(totalMonthlyIncome-totalBudgetIncl)>=0?theme.light:"#FAF0F0"}].map(c=>(
+{[{label:"הכנסה",val:totalMonthlyIncome,color:theme.incomeColor,bg:theme.light},{label:"תקציב",val:totalBudgetIncl,color:"#e8b87c",bg:"#fdf6e8"},{label:"כסף פנוי",val:totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-trackingOverflowThisMonth-fixedOverflowThisMonth,color:(totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-trackingOverflowThisMonth-fixedOverflowThisMonth)>=0?theme.acc:"#D07878",bg:(totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-trackingOverflowThisMonth-fixedOverflowThisMonth)>=0?theme.light:"#FAF0F0"}].map(c=>(
 <div key={c.label} style={{ background:c.bg, borderRadius:14, padding:"12px 10px", textAlign:"center" }}>
 <div style={{fontSize:11,color:"#6b7a8d",marginBottom:4}}>{c.label}</div>
 <div style={{fontSize:15,fontWeight:800,color:c.color}}>₪{Math.abs(c.val).toLocaleString("he-IL",{maximumFractionDigits:0})}</div>
