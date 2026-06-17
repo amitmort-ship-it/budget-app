@@ -1377,7 +1377,7 @@ style={{...cardStyle,border:isEditing?`2px solid ${theme.btn}`:"2px solid transp
 </div>
 ))}
 </div>
-{expandedCategory===("v_"+b.id)&&<div style={{background:"#f8fafc",borderRadius:10,marginTop:10,padding:"4px 0",border:"1px solid #e8eef5"}}>
+{expandedCategory===("v_"+b.id)&&(<div style={{background:"#f8fafc",borderRadius:10,marginTop:10,padding:"4px 0",border:"1px solid #e8eef5"}}>
 <div style={{fontSize:11,fontWeight:700,color:"#64748b",padding:"6px 12px 4px"}}>הוצאות החודש</div>
 {data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).sort((a,bx)=>new Date(bx.date)-new Date(a.date)).length===0
 ?<div style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:"10px 0"}}>אין הוצאות החודש</div>
@@ -1395,7 +1395,7 @@ style={{...cardStyle,border:isEditing?`2px solid ${theme.btn}`:"2px solid transp
 </div>
 ))
 }
-</div>}
+</div>)}
 </>
 )}
 </div>
@@ -1487,7 +1487,7 @@ style={{...cardStyle,border:isEditing?"2px solid "+theme.fixedText:hasOver?"1.5p
 </div>
 <button onClick={ev=>{ev.stopPropagation();setEditBucket({...b,type:"fixed"});}} style={{background:theme.fixedBg,border:"none",color:theme.fixedText,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:11,fontWeight:600}}>✏️ ערוך</button>
 </div>
-{expandedCategory===("f_"+b.id)&&<div style={{background:"#f8fafc",borderRadius:10,marginTop:10,padding:"4px 0",border:"1px solid #e8eef5"}}>
+{expandedCategory===("f_"+b.id)&&(<div style={{background:"#f8fafc",borderRadius:10,marginTop:10,padding:"4px 0",border:"1px solid #e8eef5"}}>
 <div style={{fontSize:11,fontWeight:700,color:"#64748b",padding:"6px 12px 4px"}}>הוצאות החודש</div>
 {data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).sort((a,bx)=>new Date(bx.date)-new Date(a.date)).length===0
 ?<div style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:"10px 0"}}>אין הוצאות החודש</div>
@@ -1505,7 +1505,7 @@ style={{...cardStyle,border:isEditing?"2px solid "+theme.fixedText:hasOver?"1.5p
 </div>
 ))
 }
-</div>}
+</div>)}
 )}
 </div>
 );
