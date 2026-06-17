@@ -1463,6 +1463,7 @@ style={{...cardStyle,border:isEditing?"2px solid "+theme.fixedText:hasOver?"1.5p
 </div>
 </>
 ):(
+<>
 <div onClick={()=>setExpandedCategory(expandedCategory===("f_"+b.id)?null:("f_"+b.id))} style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",userSelect:"none"}}>
 <div style={{display:"flex",alignItems:"center",gap:10}}>
 <span style={{fontSize:13,color:"#c0cad8",cursor:"grab"}}>⠿</span>
@@ -1506,6 +1507,7 @@ style={{...cardStyle,border:isEditing?"2px solid "+theme.fixedText:hasOver?"1.5p
 ))
 }
 </div>)}
+</>
 )}
 </div>
 );
