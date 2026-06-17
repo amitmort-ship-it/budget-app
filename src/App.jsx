@@ -321,7 +321,8 @@ function computeWeekBudgetMap(expensesArr, variableBucketsArr, cycleS, cycleE) {
 }
 
 // ── Effective bucket budgets: overflow from exceeded buckets is distributed equally among remaining non-exceeded buckets ──
-function computeEffectiveBucketBudgets(expenses, variableBuckets, cycleStart, cycleEnd) {
+function computeEffectiveBucketBudgets(expenses, variableBuckets, cycleStart, cycleEnd, freeMoneyPool) {
+  const _freePool = freeMoneyPool || 0;
   const bucketsOnBudget = variableBuckets.filter(b => !b.trackingOnly);
   const bucketData = bucketsOnBudget.map(b => {
     const spent = expenses.filter(e => {
@@ -339,6 +340,16 @@ function computeEffectiveBucketBudgets(expenses, variableBuckets, cycleStart, cy
     bucketData.forEach(b => { result[b.id] = b.budget; });
     return result;
   }
+  // Step 1: free money pool absorbs overflow first
+  const coveredByFree = Math.min(totalOverflow, Math.max(0, _freePool));
+  const remainingOverflow = totalOverflow - coveredByFree;
+  if (remainingOverflow === 0) {
+    // Free money covers everything — all buckets keep their original budget
+    const result = {};
+    bucketData.forEach(b => { result[b.id] = b.budget; });
+    return result;
+  }
+  // Step 2: distribute only the uncovered overflow proportionally to remaining buckets
   const bucketsWithRemaining = bucketData.filter(b => b.remaining > 0);
   const totalRemaining = bucketsWithRemaining.reduce((s, b) => s + b.remaining, 0);
   const result = {};
@@ -346,7 +357,7 @@ function computeEffectiveBucketBudgets(expenses, variableBuckets, cycleStart, cy
     if (b.overflow > 0 || b.remaining === 0) {
       result[b.id] = Math.max(b.budget, b.spent);
     } else if (totalRemaining > 0) {
-      const share = (b.remaining / totalRemaining) * totalOverflow;
+      const share = (b.remaining / totalRemaining) * remainingOverflow;
       result[b.id] = Math.max(b.spent, b.budget - share);
     } else {
       result[b.id] = b.budget;
@@ -509,6 +520,10 @@ const spent = data.expenses.filter(e => e.bucketId===b.id && inCurrentCycle(e.da
 return total + Math.max(0, spent - getMonthlyAmount(b));
 }, 0);
 const totalVariableOnBudget = data.variableBuckets.filter(b=>!b.trackingOnly).reduce((s,b)=>s+Number(b.amount||0),0);
+const varOverflowThisMonth = data.variableBuckets.filter(b=>!b.trackingOnly).reduce((total,b) => {
+  const spent = data.expenses.filter(e=>e.bucketId===b.id&&inCurrentCycle(e.date)).reduce((s,e)=>s+Number(e.amount||0),0);
+  return total + Math.max(0, spent - Number(b.amount||0));
+}, 0);
     const trackingOverflowThisMonth = data.variableBuckets.filter(b => b.trackingOnly).reduce((total, b) => {
           const spent = data.expenses.filter(e => e.bucketId === b.id && inCurrentCycle(e.date)).reduce((s,e) => s + Number(e.amount||0), 0);
           return total + Math.max(0, spent - b.amount);
@@ -1158,7 +1173,7 @@ return (
 <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",paddingTop:90,gap:4,opacity:.25}}>
 <div style={{width:1,height:36,background:"#94a3b8"}}/><span style={{fontSize:9,fontWeight:800,color:"#94a3b8",letterSpacing:1}}>+</span><div style={{width:1,height:36,background:"#94a3b8"}}/>
 </div>
-<Tube label="free" fillPct={totalMonthlyIncome>0?Math.max(0,totalMonthlyIncome-totalBudgetIncl)/totalMonthlyIncome:0} gradA="#a8d5e2" gradB="#5fa8b8" title="כסף פנוי" sub={`₪${Math.abs(Math.round(totalMonthlyIncome-totalBudgetIncl)).toLocaleString("he-IL")}`} extra={(totalMonthlyIncome-totalBudgetIncl)<0?"גירעון!":null}/>
+<Tube label="free" fillPct={totalMonthlyIncome>0?Math.max(0,totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-fixedOverflowThisMonth)/totalMonthlyIncome:0} gradA="#a8d5e2" gradB="#5fa8b8" title="כסף פנוי" sub={`₪${Math.round(Math.max(0,totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-fixedOverflowThisMonth)).toLocaleString("he-IL")}`} extra={(totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-fixedOverflowThisMonth)<0?"גירעון!":null}/>
 </div>
 {/* Redistribution is automatic — no manual button needed */}
 </div>
@@ -1294,7 +1309,7 @@ return (
 <div style={{color:theme.varSub,marginTop:2}}>תקציב שבועי: ₪{weeklyVariableBudget.toLocaleString("he-IL",{maximumFractionDigits:0})}</div>
 </div>
 {data.variableBuckets.map(b=>{
-const _monthlyBudget=Number(b.amount); const _effBudgets=computeEffectiveBucketBudgets(data.expenses,data.variableBuckets,cycleStart,cycleEnd); const effectiveMonthly=b.trackingOnly?_monthlyBudget:(_effBudgets[b.id]??_monthlyBudget); const wB=effectiveMonthly/weeksInMonth; const spent=bucketSpendThisWeek(b.id); const isEditing=editBucket?.id===b.id;
+const _monthlyBudget=Number(b.amount); const _effBudgets=computeEffectiveBucketBudgets(data.expenses,data.variableBuckets,cycleStart,cycleEnd,totalMonthlyIncome-totalBudgetIncl); const effectiveMonthly=b.trackingOnly?_monthlyBudget:(_effBudgets[b.id]??_monthlyBudget); const wB=effectiveMonthly/weeksInMonth; const spent=bucketSpendThisWeek(b.id); const isEditing=editBucket?.id===b.id;
 return (
 <div key={b.id} draggable={!isEditing} onDragStart={()=>{dragItem.current=data.variableBuckets.indexOf(b);}} onDragEnter={()=>{dragOver.current=data.variableBuckets.indexOf(b);}} onDragEnd={()=>reorderBuckets("variable")} onDragOver={e=>e.preventDefault()}
 style={{...cardStyle,border:isEditing?`2px solid ${theme.btn}`:"2px solid transparent",cursor:isEditing?"default":"grab",userSelect:"none"}}>
@@ -2256,7 +2271,7 @@ const setExp = editExpense ? (fn) => setEditExpense(prev => fn(prev)) : (fn) => 
 return (<>
 <select value={exp.bucketId} onChange={e=>setExp(p=>({...p,bucketId:e.target.value}))} style={{...inputStyle,width:"100%",marginBottom:10,boxSizing:"border-box",fontSize:14}}>
 <option value="">בחר קטגוריה</option>
-{(totalMonthlyIncome-totalBudgetIncl)>0&&<option value="free_money">💚 כסף פנוי (₪{Math.round(totalMonthlyIncome-totalBudgetIncl).toLocaleString("he-IL")})</option>}
+{(totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-fixedOverflowThisMonth)>0&&<option value="free_money">💚 כסף פנוי (₪{Math.round(Math.max(0,totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-fixedOverflowThisMonth)).toLocaleString("he-IL")})</option>}
 {data.variableBuckets.length>0&&<optgroup label="משתנות">{data.variableBuckets.map(b=><option key={b.id} value={b.id}>{ICONS[b.icon]} {b.name}</option>)}</optgroup>}
 {data.fixedBuckets.length>0&&<optgroup label="קבועות">{data.fixedBuckets.map(b=><option key={b.id} value={b.id}>{ICONS[b.icon]} {b.name}</option>)}</optgroup>}
 </select>
