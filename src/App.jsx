@@ -1240,12 +1240,36 @@ boxShadow:day.daySpend>0?"0 1px 4px rgba(0,0,0,.1)":"none"}}/>
 {data.variableBuckets.length===0?<div style={{textAlign:"center",color:"#94a3b8",fontSize:13,padding:20}}>אין באקטים משתנים עדיין</div>:
 data.variableBuckets.map(b=>{
 const monthlyBudget=Number(b.amount); const monthlySpent=data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).reduce((s,e)=>s+Number(e.amount),0); const p=pct(monthlySpent,monthlyBudget); const bc=p>90?"#D07878":p>65?"#C9A96E":"#82B89A";
+const isDashExp=expandedCategory===("d_"+b.id);
+const dashBExp=data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).sort((a,bx)=>new Date(bx.date)-new Date(a.date));
 return (<div key={b.id} style={{...cardStyle,padding:"12px 14px",marginBottom:8}}>
+<div onClick={()=>setExpandedCategory(isDashExp?null:("d_"+b.id))} style={{cursor:"pointer",userSelect:"none"}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-<div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:20}}>{ICONS[b.icon]}</span><span style={{fontSize:14,fontWeight:600}}>{b.name}</span>{b.trackingOnly&&<span style={{fontSize:9,background:"#fdf6e8",color:"#b07020",padding:"2px 5px",borderRadius:4,fontWeight:700}}>מעקב</span>}</div>
+<div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:20}}>{ICONS[b.icon]}</span><span style={{fontSize:14,fontWeight:600}}>{b.name}</span>{b.trackingOnly&&<span style={{fontSize:9,background:"#fdf6e8",color:"#b07020",padding:"2px 5px",borderRadius:4,fontWeight:700}}>מעקב</span>}<span style={{fontSize:10,color:"#94a3b8",marginRight:2}}>{isDashExp?"▲":"▼"}</span></div>
 <div style={{fontSize:12,color:"#6b7a8d",display:"flex",alignItems:"baseline",gap:4}}><span style={{color:bc,fontWeight:700}}>₪{monthlySpent.toLocaleString("he-IL",{maximumFractionDigits:0})}</span><span>{" / "}₪{monthlyBudget.toLocaleString("he-IL",{maximumFractionDigits:0})}</span><span style={{fontSize:10,color:p>90?"#A04848":p>65?"#9A7840":"#5a8a7a",fontWeight:500,opacity:0.85}}>({Math.round(p)}%)</span></div>
 </div>
 <div style={{background:"#eef2f7",borderRadius:6,height:5,overflow:"hidden"}}><div style={{background:bc,height:"100%",width:`${p}%`,transition:"width .3s",borderRadius:6}}/></div>
+</div>
+{isDashExp&&(
+<div style={{background:"#f8fafc",borderRadius:10,marginTop:8,padding:"4px 0",border:"1px solid #e8eef5"}}>
+{dashBExp.length===0
+?<div style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:"10px 0"}}>אין הוצאות החודש</div>
+:dashBExp.map(e=>(
+<div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",borderBottom:"1px solid #f1f5f9"}}>
+<div style={{flex:1}}>
+<div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{e.note||"—"}</div>
+<div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{new Date(e.date).toLocaleDateString("he-IL",{day:"numeric",month:"numeric"})}{e.paymentMethodId&&<span style={{marginRight:4,color:theme.acc}}>{getPMLabel(e.paymentMethodId)}</span>}</div>
+</div>
+<div style={{display:"flex",alignItems:"center",gap:6}}>
+<span style={{fontWeight:800,color:"#e07070",fontSize:13}}>₪{Number(e.amount).toLocaleString("he-IL")}</span>
+<button onClick={ev=>{ev.stopPropagation();setEditExpense({...e});}} style={{background:theme.btnLight,border:"none",color:theme.btn,borderRadius:6,padding:"2px 6px",cursor:"pointer",fontSize:10}}>✏️</button>
+<button onClick={ev=>{ev.stopPropagation();deleteExpense(e.id);}} style={{background:"none",border:"none",color:"#c0cad8",cursor:"pointer",fontSize:13,padding:0}}>✕</button>
+</div>
+</div>
+))
+}
+</div>
+)}
 </div>);
 })}
 </div>
@@ -1337,12 +1361,13 @@ style={{...cardStyle,border:isEditing?`2px solid ${theme.btn}`:"2px solid transp
 ):(
 <>
 <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-<div style={{display:"flex",alignItems:"center",gap:8,fontSize:15,fontWeight:700}}>
-<span style={{fontSize:13,color:"#c0cad8",cursor:"grab",marginLeft:2}}>⠿</span>
+<div style={{display:"flex",alignItems:"center",gap:8,fontSize:15,fontWeight:700,cursor:"pointer",flex:1}} onClick={()=>setExpandedCategory(expandedCategory===("v_"+b.id)?null:("v_"+b.id))}>
+<span style={{fontSize:13,color:"#c0cad8",marginLeft:2}}>⠿</span>
 <span>{ICONS[b.icon]}</span>
 <div>{b.name}{b.trackingOnly&&<span style={{fontSize:9,background:"#fdf6e8",color:"#b07020",padding:"1px 5px",borderRadius:4,fontWeight:700,marginRight:4}}>מעקב</span>}</div>
+<span style={{fontSize:10,color:"#94a3b8",marginRight:2}}>{expandedCategory===("v_"+b.id)?"▲":"▼"}</span>
 </div>
-<button onClick={()=>setEditBucket({...b,type:"variable"})} style={{background:theme.btnLight,border:"none",color:theme.btn,borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600}}>✏️ ערוך</button>
+<button onClick={ev=>{ev.stopPropagation();setEditBucket({...b,type:"variable"});}} style={{background:theme.btnLight,border:"none",color:theme.btn,borderRadius:8,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600}}>✏️ ערוך</button>
 </div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,fontSize:12}}>
 {[{l:"חודשי",v:`₪${Math.round(effectiveMonthly).toLocaleString("he-IL")}${effectiveMonthly<_monthlyBudget?" ↓":""}`,c:effectiveMonthly<_monthlyBudget?"#C9A96E":theme.acc},{l:"שבועי",v:`₪${wB.toLocaleString("he-IL",{maximumFractionDigits:0})}`,c:"#8b6fc7"},{l:"הוצאה",v:`₪${spent.toLocaleString("he-IL")}`,c:spent>wB?"#e07070":"#6bbf8e"}].map(x=>(
@@ -1352,6 +1377,30 @@ style={{...cardStyle,border:isEditing?`2px solid ${theme.btn}`:"2px solid transp
 </div>
 ))}
 </div>
+{expandedCategory===("v_"+b.id)&&(()=>{
+const varBExp=data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).sort((a,bx)=>new Date(bx.date)-new Date(a.date));
+return (
+<div style={{background:"#f8fafc",borderRadius:10,marginTop:10,padding:"4px 0",border:"1px solid #e8eef5"}}>
+<div style={{fontSize:11,fontWeight:700,color:"#64748b",padding:"6px 12px 4px"}}>הוצאות החודש</div>
+{varBExp.length===0
+?<div style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:"10px 0"}}>אין הוצאות החודש</div>
+:varBExp.map(e=>(
+<div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",borderBottom:"1px solid #f1f5f9"}}>
+<div style={{flex:1}}>
+<div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{e.note||"—"}</div>
+<div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{new Date(e.date).toLocaleDateString("he-IL",{day:"numeric",month:"numeric"})}{e.paymentMethodId&&<span style={{marginRight:4,color:theme.acc}}>{getPMLabel(e.paymentMethodId)}</span>}</div>
+</div>
+<div style={{display:"flex",alignItems:"center",gap:6}}>
+<span style={{fontWeight:800,color:"#e07070",fontSize:13}}>₪{Number(e.amount).toLocaleString("he-IL")}</span>
+<button onClick={ev=>{ev.stopPropagation();setEditExpense({...e});}} style={{background:theme.btnLight,border:"none",color:theme.btn,borderRadius:6,padding:"2px 6px",cursor:"pointer",fontSize:10}}>✏️</button>
+<button onClick={ev=>{ev.stopPropagation();deleteExpense(e.id);}} style={{background:"none",border:"none",color:"#c0cad8",cursor:"pointer",fontSize:13,padding:0}}>✕</button>
+</div>
+</div>
+))
+}
+</div>
+);
+})()}
 </>
 )}
 </div>
@@ -1419,7 +1468,7 @@ style={{...cardStyle,border:isEditing?"2px solid "+theme.fixedText:hasOver?"1.5p
 </div>
 </>
 ):(
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<div onClick={()=>setExpandedCategory(expandedCategory===("f_"+b.id)?null:("f_"+b.id))} style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",userSelect:"none"}}>
 <div style={{display:"flex",alignItems:"center",gap:10}}>
 <span style={{fontSize:13,color:"#c0cad8",cursor:"grab"}}>⠿</span>
 <span style={{fontSize:22}}>{ICONS[b.icon]}</span>
@@ -1428,6 +1477,7 @@ style={{...cardStyle,border:isEditing?"2px solid "+theme.fixedText:hasOver?"1.5p
 <span style={{fontSize:14,fontWeight:700}}>{b.name}</span>
 {b.isRecurring&&<span style={{fontSize:9,background:"#edf7f1",color:"#3d7a55",padding:"1px 5px",borderRadius:4,fontWeight:700}}>🔄 מחזורי</span>}
 {b.isSavings&&<span style={{fontSize:9,background:"#edf4fb",color:"#4a7fa5",padding:"1px 5px",borderRadius:4,fontWeight:700}}>🐷 חסכון</span>}
+<span style={{fontSize:10,color:"#94a3b8"}}>{expandedCategory===("f_"+b.id)?"▲":"▼"}</span>
 </div>
 <div style={{fontSize:13,color:"#6b7a8d"}}>
 {b.isInstallment
@@ -1440,8 +1490,32 @@ style={{...cardStyle,border:isEditing?"2px solid "+theme.fixedText:hasOver?"1.5p
 </div>
 </div>
 </div>
-<button onClick={()=>setEditBucket({...b,type:"fixed"})} style={{background:theme.fixedBg,border:"none",color:theme.fixedText,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:11,fontWeight:600}}>✏️ ערוך</button>
+<button onClick={ev=>{ev.stopPropagation();setEditBucket({...b,type:"fixed"});}} style={{background:theme.fixedBg,border:"none",color:theme.fixedText,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:11,fontWeight:600}}>✏️ ערוך</button>
 </div>
+{expandedCategory===("f_"+b.id)&&(()=>{
+const fixBExp=data.expenses.filter(e=>inCurrentCycle(e.date)&&e.bucketId===b.id).sort((a,bx)=>new Date(bx.date)-new Date(a.date));
+return (
+<div style={{background:"#f8fafc",borderRadius:10,marginTop:10,padding:"4px 0",border:"1px solid #e8eef5"}}>
+<div style={{fontSize:11,fontWeight:700,color:"#64748b",padding:"6px 12px 4px"}}>הוצאות החודש</div>
+{fixBExp.length===0
+?<div style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:"10px 0"}}>אין הוצאות החודש</div>
+:fixBExp.map(e=>(
+<div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",borderBottom:"1px solid #f1f5f9"}}>
+<div style={{flex:1}}>
+<div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{e.note||"—"}</div>
+<div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{new Date(e.date).toLocaleDateString("he-IL",{day:"numeric",month:"numeric"})}{e.paymentMethodId&&<span style={{marginRight:4,color:theme.acc}}>{getPMLabel(e.paymentMethodId)}</span>}</div>
+</div>
+<div style={{display:"flex",alignItems:"center",gap:6}}>
+<span style={{fontWeight:800,color:"#e07070",fontSize:13}}>₪{Number(e.amount).toLocaleString("he-IL")}</span>
+<button onClick={ev=>{ev.stopPropagation();setEditExpense({...e});}} style={{background:theme.fixedBg,border:"none",color:theme.fixedText,borderRadius:6,padding:"2px 6px",cursor:"pointer",fontSize:10}}>✏️</button>
+<button onClick={ev=>{ev.stopPropagation();deleteExpense(e.id);}} style={{background:"none",border:"none",color:"#c0cad8",cursor:"pointer",fontSize:13,padding:0}}>✕</button>
+</div>
+</div>
+))
+}
+</div>
+);
+})()}
 )}
 </div>
 );
