@@ -1,0 +1,160 @@
+/* ============================================================
+   ENHANCEMENTS.CSS - הכספת המשפחתית UI Improvements
+   ============================================================ */
+
+/* ANIMATIONS */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fabPulse {
+  0%,100% { box-shadow: 0 6px 28px rgba(124,92,191,0.45); }
+  50%      { box-shadow: 0 10px 40px rgba(124,92,191,0.65); }
+}
+
+/* BASE */
+body {
+  font-family: 'Heebo', 'Assistant', 'Segoe UI', sans-serif !important;
+  padding-bottom: 96px !important;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D4C8EF; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #A47FD6; }
+
+/* HEADER */
+div[style*="linear-gradient(135deg, rgb(197"] {
+  background: linear-gradient(135deg, #5E3A9A 0%, #8258C8 55%, #A67FD8 100%) !important;
+  border-radius: 0 0 28px 28px !important;
+  box-shadow: 0 6px 32px rgba(80,50,140,0.28) !important;
+}
+
+/* PAGE BACKGROUND */
+div[style*="background: rgb(245, 246, 248)"] {
+  background: #EEE8F8 !important;
+}
+
+/* WHITE CARDS */
+div[style*="background: rgb(255, 255, 255)"] {
+  border-radius: 18px !important;
+  box-shadow: 0 3px 18px rgba(124,92,191,0.11) !important;
+  border: 1px solid rgba(200,185,230,0.45) !important;
+  transition: box-shadow 0.22s ease, transform 0.22s ease !important;
+}
+div[style*="background: rgb(255, 255, 255)"]:hover {
+  box-shadow: 0 8px 30px rgba(124,92,191,0.20) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* BUTTONS */
+button {
+  transition: all 0.2s cubic-bezier(.4,0,.2,1) !important;
+  font-weight: 600 !important;
+}
+button:hover { filter: brightness(1.08) !important; transform: translateY(-1px) !important; }
+button:active { transform: translateY(0) scale(0.97) !important; }
+
+/* PROGRESS BARS */
+div[style*="height: 8px"],
+div[style*="height: 6px"] {
+  border-radius: 99px !important;
+  overflow: hidden !important;
+}
+div[style*="height: 8px"] > div,
+div[style*="height: 6px"] > div {
+  border-radius: 99px !important;
+  transition: width 0.5s cubic-bezier(.4,0,.2,1) !important;
+}
+
+/* INPUTS */
+input, select, textarea {
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+  outline: none !important;
+}
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 3px rgba(124,92,191,0.18) !important;
+}
+
+/* FAB */
+#claude-fab {
+  position: fixed !important;
+  bottom: 22px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9998 !important;
+  background: linear-gradient(135deg, #7C5CBF 0%, #A47FD6 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 99px !important;
+  padding: 0 32px !important;
+  height: 54px !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.03em !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  white-space: nowrap !important;
+  animation: fabPulse 3.5s ease-in-out infinite !important;
+}
+#claude-fab:hover {
+  transform: translateX(-50%) translateY(-4px) !important;
+  box-shadow: 0 14px 40px rgba(124,92,191,0.60) !important;
+  animation: none !important;
+}
+#claude-fab:active { transform: translateX(-50%) scale(0.96) !important; }
+
+/* DARK MODE TOGGLE BUTTON */
+#claude-darkmode-btn {
+  position: fixed !important;
+  top: 14px !important;
+  left: 14px !important;
+  z-index: 9999 !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  background: rgba(255,255,255,0.20) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1.5px solid rgba(255,255,255,0.38) !important;
+  box-shadow: 0 3px 16px rgba(0,0,0,0.20) !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  transition: all 0.22s ease !important;
+  font-weight: 400 !important;
+}
+#claude-darkmode-btn:hover {
+  transform: scale(1.15) rotate(20deg) !important;
+  background: rgba(255,255,255,0.32) !important;
+  filter: none !important;
+}
+
+/* DARK MODE */
+body.claude-dark > div:first-child {
+  filter: invert(1) hue-rotate(180deg) !important;
+  transition: filter 0.4s ease !important;
+}
+body.claude-dark > div:first-child img,
+body.claude-dark > div:first-child svg,
+body.claude-dark > div:first-child canvas,
+body.claude-dark > div:first-child video {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+/* ZERO-SPEND CATEGORIES */
+.cl-zero-category {
+  opacity: 0.45 !important;
+  filter: saturate(0.3) !important;
+  transition: opacity 0.22s, filter 0.22s !important;
+}
+.cl-zero-category:hover {
+  opacity: 1 !important;
+  filter: none !important;
+}
