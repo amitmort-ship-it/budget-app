@@ -1333,7 +1333,7 @@ return (
 <div style={{color:theme.varSub,marginTop:2}}>תקציב שבועי: ₪{weeklyVariableBudget.toLocaleString("he-IL",{maximumFractionDigits:0})}</div>
 </div>
 {data.variableBuckets.map(b=>{
-const _monthlyBudget=Number(b.amount); const _effBudgets=computeEffectiveBucketBudgets(data.expenses,data.variableBuckets,cycleStart,cycleEnd,Math.max(0,totalMonthlyIncome-totalBudgetIncl-fixedOverflowThisMonth-trackingOverflowThisMonth)); const effectiveMonthly=b.trackingOnly?_monthlyBudget:(_effBudgets[b.id]??_monthlyBudget); const wB=effectiveMonthly/weeksInMonth; const spent=bucketSpendThisWeek(b.id); const isEditing=editBucket?.id===b.id;
+const _monthlyBudget=Number(b.amount); const _effBudgets=computeEffectiveBucketBudgets(data.expenses,data.variableBuckets,cycleStart,cycleEnd,Math.max(0,totalMonthlyIncome-totalBudgetIncl-fixedOverflowThisMonth-trackingOverflowThisMonth-varOverflowThisMonth)); const effectiveMonthly=b.trackingOnly?_monthlyBudget:(_effBudgets[b.id]??_monthlyBudget); const wB=effectiveMonthly/weeksInMonth; const spent=bucketSpendThisWeek(b.id); const isEditing=editBucket?.id===b.id;
 return (
 <div key={b.id} draggable={!isEditing} onDragStart={()=>{dragItem.current=data.variableBuckets.indexOf(b);}} onDragEnter={()=>{dragOver.current=data.variableBuckets.indexOf(b);}} onDragEnd={()=>reorderBuckets("variable")} onDragOver={e=>e.preventDefault()}
 style={{...cardStyle,border:isEditing?`2px solid ${theme.btn}`:"2px solid transparent",cursor:isEditing?"default":"grab",userSelect:"none"}}>
