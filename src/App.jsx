@@ -2327,7 +2327,7 @@ style={{background:"#e07070",color:"#fff",border:"none",borderRadius:10,padding:
 )}
 
 {/* Add/Edit expense sheet */}
-{(view==="add-expense"||editExpense)&&(
+{(view==="add-expense"||editExpense)&&(<>
   <div onClick={()=>{setView("home");setEditExpense(null);}} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:99}}/>
 <div style={{position:"fixed",bottom:0,left:0,right:0,background:"#fff",borderRadius:"20px 20px 0 0",padding:24,boxShadow:"0 -8px 40px rgba(0,0,0,.1)",zIndex:100,maxWidth:480,margin:"0 auto"}}>
 <div style={{width:36,height:4,background:"#dde4ed",borderRadius:2,margin:"0 auto 20px"}}/>
@@ -2365,7 +2365,7 @@ return (<>
 </>);
 })()}
 </div>
-)}
+</>)}
 
 {/* Day expenses popup */}
 {selectedDay&&(
