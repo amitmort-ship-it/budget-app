@@ -172,7 +172,7 @@ body.claude-dark > div:first-child video {
         }
 
         /* Header - clean white with subtle green border instead of gradient */
-        body[data-theme="green"] div[style*="linear-gradient(135deg, rgb(106"] {
+        body[data-theme="green"] div[style*="linear-gradient(135deg"] {
           background: #ffffff !important;
             border-radius: 0 0 20px 20px !important;
               box-shadow: 0 2px 16px rgba(58,122,58,0.12) !important;
@@ -181,7 +181,7 @@ body.claude-dark > div:first-child video {
                   }
 
                   /* Header text color fix */
-                  body[data-theme="green"] div[style*="linear-gradient(135deg, rgb(106"] * {
+                  body[data-theme="green"] div[style*="linear-gradient(135deg"] * {
                     color: #1a4a1a !important;
                     }
 
