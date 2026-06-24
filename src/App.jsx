@@ -224,6 +224,17 @@ incomeColor:"#d4607a", expColor:"#e8b87c", surplusColor:"#c05070",
 exportGradA:"#c05070", exportGradB:"#e88aa0", exportAccent:"#d4607a",
 incomeAcc:"#d4607a",
 },
+green: {
+  name:"ירוק 🌱",
+  a:"#6aaa6a", b:"#4a8c4a", acc:"#3a7a3a", light:"#f0f7f0", navActive:"#3a7a3a", btn:"#3a7a3a", btnLight:"#c5e0c5",
+  savingsA:"#6aaa6a", savingsB:"#4a8c4a",
+  fixedBg:"#f5fcf5", fixedText:"#1a4a1a", fixedSub:"#2a6a2a",
+  varBg:"#f0f7f0", varText:"#1a4a1a", varSub:"#3a7a3a",
+  incomeColor:"#3a7a3a", expColor:"#c9a96e", surplusColor:"#2a6a2a",
+  exportGradA:"#4a8c4a", exportGradB:"#6aaa6a", exportAccent:"#3a7a3a",
+  incomeAcc:"#3a7a3a",
+  },
+}
 };
 function getWeekId(date = new Date()) {
 const d = new Date(date);
