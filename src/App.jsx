@@ -1173,7 +1173,7 @@ return (
 <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",paddingTop:90,gap:4,opacity:.25}}>
 <div style={{width:1,height:36,background:"#94a3b8"}}/><span style={{fontSize:9,fontWeight:800,color:"#94a3b8",letterSpacing:1}}>+</span><div style={{width:1,height:36,background:"#94a3b8"}}/>
 </div>
-<Tube label="free" fillPct={totalMonthlyIncome>0?Math.max(0,totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-trackingOverflowThisMonth-fixedOverflowThisMonth)/totalMonthlyIncome:0} gradA="#a8d5e2" gradB="#5fa8b8" title="כסף פנוי" sub={`₪${Math.round(Math.max(0,totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-trackingOverflowThisMonth-fixedOverflowThisMonth)).toLocaleString("he-IL")}`} extra={(totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-trackingOverflowThisMonth-fixedOverflowThisMonth)<0?"גירעון!":null}/>
+<Tube label="free" fillPct={totalMonthlyIncome>0?Math.max(0,totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-trackingOverflowThisMonth-fixedOverflowThisMonth)/Math.max(totalMonthlyIncome-totalBudgetIncl,1):0} gradA="#a8d5e2" gradB="#5fa8b8" title="כסף פנוי" sub={`₪${Math.round(Math.max(0,totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-trackingOverflowThisMonth-fixedOverflowThisMonth)).toLocaleString("he-IL")}`} extra={(totalMonthlyIncome-totalBudgetIncl-varOverflowThisMonth-trackingOverflowThisMonth-fixedOverflowThisMonth)<0?"גירעון!":null}/>
 </div>
 {/* Redistribution is automatic — no manual button needed */}
 </div>
@@ -2328,6 +2328,7 @@ style={{background:"#e07070",color:"#fff",border:"none",borderRadius:10,padding:
 
 {/* Add/Edit expense sheet */}
 {(view==="add-expense"||editExpense)&&(
+  <div onClick={()=>{setView("home");setEditExpense(null);}} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:99}}/>
 <div style={{position:"fixed",bottom:0,left:0,right:0,background:"#fff",borderRadius:"20px 20px 0 0",padding:24,boxShadow:"0 -8px 40px rgba(0,0,0,.1)",zIndex:100,maxWidth:480,margin:"0 auto"}}>
 <div style={{width:36,height:4,background:"#dde4ed",borderRadius:2,margin:"0 auto 20px"}}/>
 <div style={{fontSize:16,fontWeight:700,marginBottom:16}}>{editExpense?"✏️ עריכת הוצאה":"רישום הוצאה"}</div>
