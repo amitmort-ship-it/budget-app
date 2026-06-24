@@ -234,7 +234,7 @@ green: {
   exportGradA:"#4a8c4a", exportGradB:"#6aaa6a", exportAccent:"#3a7a3a",
   incomeAcc:"#3a7a3a",
   },
-}};
+};
 function getWeekId(date = new Date()) {
 const d = new Date(date);
 d.setHours(0, 0, 0, 0);
