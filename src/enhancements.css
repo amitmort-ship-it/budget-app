@@ -158,3 +158,67 @@ body.claude-dark > div:first-child video {
   opacity: 1 !important;
   filter: none !important;
 }
+
+
+/* ============================================================
+   CLEAN GREEN THEME (body[data-theme="green"])
+      ============================================================ */
+
+      /* Page background - clean white */
+      body[data-theme="green"] div[style*="background: rgb(245, 246, 248)"],
+      body[data-theme="green"] div[style*="background: rgb(238, 232, 248)"],
+      body[data-theme="green"] div[style*="background: rgb(240, 247, 240)"] {
+        background: #f7faf7 !important;
+        }
+
+        /* Header - clean white with subtle green border instead of gradient */
+        body[data-theme="green"] div[style*="linear-gradient(135deg, rgb(106"] {
+          background: #ffffff !important;
+            border-radius: 0 0 20px 20px !important;
+              box-shadow: 0 2px 16px rgba(58,122,58,0.12) !important;
+                border-bottom: 2px solid #d4ead4 !important;
+                  color: #1a4a1a !important;
+                  }
+
+                  /* Header text color fix */
+                  body[data-theme="green"] div[style*="linear-gradient(135deg, rgb(106"] * {
+                    color: #1a4a1a !important;
+                    }
+
+                    /* White cards - cleaner, minimal shadow */
+                    body[data-theme="green"] div[style*="background: rgb(255, 255, 255)"] {
+                      border-radius: 16px !important;
+                        box-shadow: 0 1px 8px rgba(0,0,0,0.07), 0 0 0 1px rgba(200,230,200,0.5) !important;
+                          border: 1px solid #e8f3e8 !important;
+                            transition: box-shadow 0.22s ease, transform 0.22s ease !important;
+                            }
+                            body[data-theme="green"] div[style*="background: rgb(255, 255, 255)"]:hover {
+                              box-shadow: 0 4px 20px rgba(58,122,58,0.13), 0 0 0 1px rgba(100,180,100,0.3) !important;
+                                transform: translateY(-1px) !important;
+                                }
+
+                                /* Scrollbar green */
+                                body[data-theme="green"] ::-webkit-scrollbar-thumb { background: #b0d8b0 !important; }
+                                body[data-theme="green"] ::-webkit-scrollbar-thumb:hover { background: #6aaa6a !important; }
+
+                                /* FAB button - green */
+                                body[data-theme="green"] #claude-fab {
+                                  background: linear-gradient(135deg, #4a8c4a 0%, #6aaa6a 100%) !important;
+                                    box-shadow: 0 6px 28px rgba(58,122,58,0.45) !important;
+                                      animation: greenFabPulse 3.5s ease-in-out infinite !important;
+                                      }
+                                      body[data-theme="green"] #claude-fab:hover {
+                                        box-shadow: 0 14px 40px rgba(58,122,58,0.60) !important;
+                                        }
+
+                                        @keyframes greenFabPulse {
+                                          0%,100% { box-shadow: 0 6px 28px rgba(58,122,58,0.45); }
+                                            50% { box-shadow: 0 10px 40px rgba(58,122,58,0.65); }
+                                            }
+
+                                            /* Input focus ring - green */
+                                            body[data-theme="green"] input:focus,
+                                            body[data-theme="green"] select:focus,
+                                            body[data-theme="green"] textarea:focus {
+                                              box-shadow: 0 0 0 3px rgba(58,122,58,0.18) !important;
+                                              }

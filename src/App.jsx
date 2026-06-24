@@ -757,6 +757,7 @@ setEditNote(null); showToast("רשומה עודכנה ✓");
 // ── Weekly redistribution is now fully automatic via dynamic budget ──
 
 const theme = THEMES[data.theme||"pastel"] || THEMES.pastel;
+useEffect(() => { document.body.dataset.theme = data.theme || 'pastel'; }, [data.theme]);
 
 // ── OCR handling ────────────────────────────────────────────────────────
 const handleOcrUpload = async (file) => {
