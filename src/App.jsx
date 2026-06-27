@@ -31,91 +31,6 @@ body: JSON.stringify({ id: 'main', data, updated_at: new Date().toISOString() })
 } catch(e) { console.error('Supabase save error', e); }
 }
 
-const STORAGE_KEY = "home-expense-tracker-v2";
-const TG_BOT_TOKEN = "8952474670:AAFvcadraSFVD_k3lsq7iYJugdtN_9z7tsg";
-const TG_CHAT_ID = "-5182091532";
-const sendToTelegram = async (expense, getBucketName) => {
-  const icon = ICONS[expense.bucketId] || "";
-  const bucket = getBucketName ? getBucketName(expense.bucketId) : expense.bucketId;
-  const date = expense.date ? new Date(expense.date).toLocaleDateString("he-IL") : "";
-  const note = expense.note ? "\nהערה: " + expense.note : "";
-  const msg = "💸 הוצאה נרשמה\n" + icon + " " + bucket + "\n💰 ₪" + Number(expense.amount).toLocaleString("he-IL") + "\n📅 " + date + note;
-  try {
-    await fetch("https://api.telegram.org/bot" + TG_BOT_TOKEN + "/sendMessage", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: TG_CHAT_ID, text: msg })
-    });
-  } catch(err) { console.error("Telegram error", err); }
-};
-const sendNoteToTelegram = async (note) => {
-  const title = note.title ? note.title + "\n" : "";
-  const date = note.createdAt ? new Date(note.createdAt).toLocaleDateString("he-IL") : "";
-  const msg = "📝 " + title + note.body + "\n\n📅 " + date;
-  try {
-    await fetch("https://api.telegram.org/bot" + TG_BOT_TOKEN + "/sendMessage", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: TG_CHAT_ID, text: msg })
-    });
-  } catch(err) { console.error("Telegram note error", err); }
-};
-const sendWeeklyReport = async (expenses, varBuckets, weeklyBudget, toast) => {
-  const now = new Date();
-  const dayNames = ['אחד','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-  const todayDay = now.getDay();
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate()-todayDay);
-  weekStart.setHours(0,0,0,0);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate()+6);
-  weekEnd.setHours(23,59,59,999);
-  const weekExp = expenses.filter(e=>{
-    const ed=new Date(e.date||e.createdAt);
-    return ed>=weekStart && ed<=weekEnd && varBuckets.find(b=>b.id===e.bucketId);
-  });
-  const budgetExp = weekExp.filter(e=>!varBuckets.find(b=>b.id===e.bucketId)?.trackingOnly);
-  const trackingSpent = weekExp.filter(e=>varBuckets.find(b=>b.id===e.bucketId)?.trackingOnly).reduce((s,e)=>s+Number(e.amount||0),0);
-  const weekSpent = budgetExp.reduce((s,e)=>s+Number(e.amount||0),0);
-  const weekLeft = weeklyBudget - weekSpent;
-  const byBucket = {};
-  for(const e of weekExp){
-    const bucket=varBuckets.find(b=>b.id===e.bucketId);
-    const name=bucket?bucket.name:'אחר';
-    byBucket[name]=(byBucket[name]||0)+Number(e.amount||0);
-  }
-  const sorted = Object.entries(byBucket).sort((a,b)=>b[1]-a[1]);
-  const weekStartStr = weekStart.toLocaleDateString('he-IL');
-  const weekEndStr = weekEnd.toLocaleDateString('he-IL');
-  const lines = [
-    '📅 דוח שבועי | יום '+dayNames[now.getDay()]+' '+now.toLocaleDateString('he-IL'),
-    weekStartStr+' - '+weekEndStr,
-    '',
-    '💰 תקציב שבועי: ₪'+weeklyBudget.toLocaleString('he-IL'),
-    '💸 הוצאות שבוע זה: ₪'+weekSpent.toLocaleString('he-IL'),
-    ...(trackingSpent>0?[`👁 מעקב בלבד (לא כלול בתקציב): ₪${trackingSpent.toLocaleString('he-IL')}`]:[]),
-    weekLeft>=0?'✅ נותר לשבוע: ₪'+weekLeft.toLocaleString('he-IL'):'⚠️ חרגת מהתקציב ב: ₪'+Math.abs(weekLeft).toLocaleString('he-IL'),
-    '',
-  ];
-  if(sorted.length>0){
-    lines.push('📊 הוצאות לפי קטגוריה:');
-    for(const [name,amount] of sorted){
-      const pct=weekSpent>0?Math.round((amount/weekSpent)*100):0;
-      lines.push('  • '+name+': ₪'+amount.toLocaleString('he-IL')+' ('+pct+'%)');
-    }
-  } else {
-    lines.push('🎉 אין הוצאות השבוע עד כאן!');
-  }
-  try {
-    await fetch('https://api.telegram.org/bot'+TG_BOT_TOKEN+'/sendMessage',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({chat_id:TG_CHAT_ID,text:lines.join('\n')})
-    });
-    toast ? toast('דוח נשלח לטלגרם ✅') : null;
-  } catch(err){
-    toast ? toast('שגיאה בשליחה', '#e07070') : null;
-  }
-};
 
 
 const ICONS = {
@@ -1324,7 +1239,6 @@ return (
 <div style={{display:"flex",alignItems:"center",gap:8}}>
 <span style={{fontWeight:800,color:"#e07070",fontSize:15}}>₪{Number(e.amount).toLocaleString("he-IL")}</span>
 <button onClick={()=>setEditExpense({...e})} style={{background:theme.btnLight,border:"none",color:theme.btn,borderRadius:7,padding:"3px 7px",cursor:"pointer",fontSize:11}}>✏️</button>
-<button onClick={()=>sendToTelegram(e, getBucketName)} title="שלח לטלגרם" style={{background:"none",border:"none",cursor:"pointer",fontSize:16,padding:0}}>📤</button>
 <button onClick={()=>deleteExpense(e.id)} style={{background:"none",border:"none",color:"#c0cad8",cursor:"pointer",fontSize:16,padding:0}}>✕</button>
 </div>
 </div>
@@ -2111,7 +2025,6 @@ style={{...inputStyle,width:"100%",marginBottom:10,boxSizing:"border-box",fontSi
 <div style={{display:"flex",alignItems:"center",gap:8}}>
 <span style={{fontWeight:800,color:"#e07070"}}>₪{Number(e.amount).toLocaleString("he-IL")}</span>
 <button onClick={()=>setEditExpense({...e})} style={{background:theme.btnLight,border:"none",color:theme.btn,borderRadius:7,padding:"3px 7px",cursor:"pointer",fontSize:11}}>✏️</button>
-<button onClick={()=>sendToTelegram(e, getBucketName)} title="שלח לטלגרם" style={{background:"none",border:"none",cursor:"pointer",fontSize:16,padding:0}}>📤</button>
 <button onClick={()=>deleteExpense(e.id)} style={{background:"none",border:"none",color:"#c0cad8",cursor:"pointer",fontSize:14}}>✕</button>
 </div>
 </div>
@@ -2166,7 +2079,6 @@ style={{width:18,height:18,borderRadius:"50%",background:c,border:editNote.color
 <span style={{fontSize:10,color:"rgba(0,0,0,.3)"}}>{new Date(n.createdAt).toLocaleDateString("he-IL")}</span>
 <div style={{display:"flex",gap:6}}>
 <button onClick={()=>setEditNote({...n})} style={{background:"rgba(0,0,0,.07)",border:"none",borderRadius:8,padding:"4px 8px",fontSize:11,cursor:"pointer"}}>✏️</button>
-<button onClick={()=>sendNoteToTelegram(n)} title="שלח לטלגרם" style={{background:"rgba(0,136,204,.1)",border:"none",borderRadius:8,padding:"4px 8px",fontSize:11,color:"#0088cc",cursor:"pointer"}}>📤</button>
 <button onClick={()=>deleteNote(n.id)} style={{background:"rgba(224,112,112,.1)",border:"none",borderRadius:8,padding:"4px 8px",fontSize:11,color:"#e07070",cursor:"pointer"}}>✕</button>
 </div>
 </div>
@@ -2203,11 +2115,6 @@ style={{width:18,height:18,borderRadius:"50%",background:c,border:editNote.color
 ⬇️ הורד {exportType==="weekly"?"דוח שבועי":"דוח חודשי"}
 </button>
 {exportType==="monthly"&&<div style={{fontSize:10,color:"rgba(255,255,255,.65)",marginTop:6,textAlign:"center"}}>כולל: הוצאות + סוג · סיכום קטגוריות · פירוט שבועי · לפי אמצעי תשלום</div>}
-</div>
-<div style={cardStyle}>
-<div style={{fontWeight:800,fontSize:14,marginBottom:12,color:theme.primary}}>📲 טלגרם</div>
-<div style={{fontSize:12,color:theme.subText,marginBottom:12}}>שלח דוח שבועי לקבוצת הוואצאפ כעת</div>
-<button onClick={async()=>{try{await sendWeeklyReport(data.expenses||[],data.variableBuckets||[],getWeekBudget(getWeekId()));setToast({msg:"דוח נשלח לטלגרם ✅",color:"#5aa67d"});setTimeout(()=>setToast(null),3000);}catch(err){setToast({msg:"שגיאה בשליחת הדוח",color:"#e07070"});setTimeout(()=>setToast(null),3000);}}} style={{width:"100%",background:theme.primary,color:"#fff",border:"none",borderRadius:10,padding:"11px",fontSize:13,fontWeight:800,cursor:"pointer"}}>📊 שלח דוח שבועי לטלגרם</button>
 </div>
 <div style={cardStyle}>
 <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>💰 מקורות הכנסה</div>
